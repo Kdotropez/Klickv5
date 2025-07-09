@@ -1,0 +1,351 @@
+﻿.step-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+    .step-container h2 {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+    }
+
+    .step-container label {
+        display: block;
+        margin: 10px 0;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .step-container select,
+    .step-container input[type="time"],
+    .step-container input[type="text"],
+    .step-container input[type="date"] {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Roboto', sans-serif;
+    }
+
+.error {
+    color: #dc3545;
+    margin-bottom: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.error-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+    .error-container h2 {
+        font-family: 'Roboto', sans-serif;
+        color: #dc3545;
+    }
+
+    .error-container p {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+    }
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.button-primary {
+    background-color: #1e88e5;
+    color: #fff;
+}
+
+    .button-primary:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
+.button-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+    .button-secondary:hover {
+        background-color: #5a6268;
+        transform: scale(1.05);
+    }
+
+.button-reset {
+    background-color: #e53935;
+    color: #fff;
+}
+
+    .button-reset:hover {
+        background-color: #d32f2f;
+        transform: scale(1.05);
+    }
+
+footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #999; /* Gris plus clair */
+}
+
+.shop-input {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.shop-list {
+    margin: 20px 0;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.delete-icon {
+    cursor: pointer;
+    color: #dc3545;
+}
+
+    .delete-icon:hover {
+        color: #d32f2f;
+    }
+
+.date-icon {
+    margin-left: 10px;
+    color: #1e88e5;
+}
+
+.planning-container {
+    margin-top: 20px;
+}
+
+.day-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.table-container {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+}
+
+.fixed-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    border-right: 1px solid #ddd;
+    width: 120px;
+    font-size: 16px;
+    text-align: left;
+    padding: 8px;
+}
+
+.scrollable-col {
+    width: 36px;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid #ddd;
+    padding: 8px;
+    cursor: pointer;
+}
+
+    .scrollable-col:hover {
+        background-color: #f0f0f0;
+        transform: scale(1.05);
+    }
+
+    .scrollable-col:active {
+        transform: scale(0.95);
+    }
+
+.navigation-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.recap-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 800px;
+    width: 90%;
+    position: relative;
+    font-family: 'Roboto', sans-serif;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.copy-paste-section {
+    margin-top: 20px;
+}
+
+.copy-paste-container {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+    .copy-paste-container h3 {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+.target-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.feedback {
+    color: #4a90e2;
+    margin-top: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.recap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Roboto', sans-serif;
+    margin-top: 20px;
+}
+
+    .recap-table th,
+    .recap-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    .recap-table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+
+@media (max-width: 768px) {
+    .step-container {
+        padding: 15px;
+        margin: 10px;
+    }
+
+    .button {
+        padding: 8px 16px;
+    }
+
+    .shop-input {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fixed-col {
+        width: 100px;
+        font-size: 14px;
+    }
+
+    .scrollable-col {
+        width: 32px;
+        font-size: 14px;
+    }
+
+    .target-days {
+        flex-direction: column;
+    }
+
+    .recap-table {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .step-container {
+        padding: 10px;
+        margin: 5px;
+    }
+
+    .button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    .fixed-col {
+        width: 80px;
+        font-size: 12px;
+    }
+
+    .scrollable-col {
+        width: 28px;
+        font-size: 12px;
+    }
+
+    .recap-table {
+        font-size: 12px;
+    }
+}

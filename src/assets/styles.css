@@ -105,7 +105,7 @@
 footer {
     margin-top: 20px;
     font-size: 14px;
-    color: #999; /* Gris plus clair */
+    color: #999;
 }
 
 .shop-input {
@@ -226,6 +226,8 @@ footer {
     width: 90%;
     position: relative;
     font-family: 'Roboto', sans-serif;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-close {
@@ -322,6 +324,17 @@ footer {
     .recap-table {
         font-size: 14px;
     }
+
+        .recap-table th,
+        .recap-table td {
+            padding: 6px;
+            font-size: 12px;
+        }
+
+    .modal-content {
+        max-width: 95%;
+        padding: 15px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -347,5 +360,16 @@ footer {
 
     .recap-table {
         font-size: 12px;
+    }
+
+        .recap-table th,
+        .recap-table td {
+            padding: 4px;
+            font-size: 10px;
+        }
+
+    .modal-content {
+        max-width: 98%;
+        padding: 10px;
     }
 }

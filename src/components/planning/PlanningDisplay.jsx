@@ -186,28 +186,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     );
                 })}
             </div>
-            <div className="daily-recap-table" style={{ margin: '20px 0', textAlign: 'center' }}>
-                <h3>Récapitulatif des heures pour {format(selectedDay, 'EEEE d MMMM', { locale: fr })}</h3>
-                <table style={{ width: '100%', maxWidth: '300px', margin: '0 auto', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr>
-                            <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f0f0f0', fontFamily: 'Roboto, sans-serif' }}>Employé</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f0f0f0', fontFamily: 'Roboto, sans-serif' }}>Heures</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {selectedEmployees.map((emp) => {
-                            const dailyHours = getEmployeeDailyHours(emp, selectedDay);
-                            return (
-                                <tr key={emp}>
-                                    <td style={{ border: '1px solid #ddd', padding: '8px', fontFamily: 'Roboto, sans-serif' }}>{emp}</td>
-                                    <td style={{ border: '1px solid #ddd', padding: '8px', fontFamily: 'Roboto, sans-serif' }}>{dailyHours.toFixed(1)} h</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
             <div className="planning-table">
                 <table className="planning-table">
                     <thead>

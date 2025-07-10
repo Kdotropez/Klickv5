@@ -15,8 +15,10 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
     const generateTimeSlots = (start, end, interval) => {
         const slots = [];
         let current = new Date(`2000-01-01T${start}:00Z`);
-        const endDate = new Date(`2000-01-01T${end}:00Z`);
-        if (end <= start) {
+        let endDate = new Date(`2000-01-01T${end}:00Z`);
+        const startMinutes = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+        let endMinutes = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+        if (endMinutes <= startMinutes) {
             endDate.setDate(endDate.getDate() + 1);
         }
 
@@ -45,26 +47,29 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
             return;
         }
 
-        // Convertir les heures en minutes pour une comparaison simple
+        // Convertir en minutes pour une comparaison robuste
         const startMinutes = startHour * 60 + startMinute;
         let endMinutes = endHour * 60 + endMinute;
-        const isNextDay = endTime <= startTime || endTime <= '06:00';
 
-        // Si l’heure de fin est le lendemain, ajouter 24 heures (1440 minutes)
+        // Si l’heure de fin est après minuit, considérer qu’elle est le lendemain
+        const isNextDay = endTime <= startTime || endTime <= '06:00';
         if (isNextDay) {
             endMinutes += 24 * 60;
         }
 
+        // Vérification que l’heure de fin est postérieure à l’heure de début
         if (endMinutes <= startMinutes) {
             setError('L’heure de fin doit être postérieure à l’heure de début.');
             return;
         }
 
-        if (endTime > '06:00' && isNextDay) {
+        // Vérification que l’heure de fin ne dépasse pas 06:00 le lendemain
+        if (isNextDay && endTime > '06:00') {
             setError('L’heure de fin ne peut pas dépasser 06:00 le lendemain.');
             return;
         }
 
+        // Vérification de l’intervalle
         if (![15, 30, 60].includes(Number(interval))) {
             setError('L’intervalle doit être 15, 30 ou 60 minutes.');
             return;

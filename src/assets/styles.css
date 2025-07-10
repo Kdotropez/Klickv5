@@ -124,6 +124,7 @@
     gap: 10px;
     justify-content: center;
     margin-top: 15px;
+    margin-bottom: 20px;
 }
 
 .button {
@@ -225,6 +226,8 @@ footer {
     width: 100%;
     border-collapse: collapse;
     font-family: 'Inter', sans-serif;
+    margin-top: 20px;
+    margin-bottom: 30px;
 }
 
 .fixed-col {
@@ -232,11 +235,11 @@ footer {
     left: 0;
     background: #fff;
     border-right: 1px solid #ddd;
-    width: 200px; /* Augmenté pour accueillir le nom + heures */
+    width: 200px;
     font-size: 16px;
     text-align: left;
     padding: 8px;
-    white-space: nowrap; /* Empêche le texte de passer à la ligne */
+    white-space: nowrap;
 }
 
 .scrollable-col {
@@ -312,33 +315,90 @@ footer {
 }
 
 .copy-paste-section {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .copy-paste-container {
     background: #f9f9f9;
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
     border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
     .copy-paste-container h3 {
         font-family: 'Roboto', sans-serif;
         color: #333;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 20px;
     }
 
-.target-days {
+.copy-paste-form {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 10px 0;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
 }
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+    .form-group label {
+        font-family: 'Roboto', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-group select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 16px;
+        background-color: #fff;
+        transition: border-color 0.2s;
+    }
+
+        .form-group select:focus {
+            border-color: #1e88e5;
+            outline: none;
+        }
+
+.target-days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.target-day-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    padding: 8px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+    .target-day-item:hover {
+        background-color: #f0f0f0;
+    }
 
 .feedback {
     color: #4a90e2;
     margin-top: 10px;
     font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    text-align: center;
 }
 
 .recap-table {
@@ -361,32 +421,6 @@ footer {
         position: sticky;
         top: 0;
         z-index: 10;
-    }
-
-.daily-recap-table {
-    margin: 20px 0;
-    font-family: 'Roboto', sans-serif;
-    text-align: center;
-}
-
-    .daily-recap-table table {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-        border-collapse: collapse;
-    }
-
-    .daily-recap-table th,
-    .daily-recap-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
-        font-family: 'Roboto', sans-serif;
-    }
-
-    .daily-recap-table th {
-        background-color: #f0f0f0;
-        font-weight: bold;
     }
 
 .calendar-input {
@@ -468,7 +502,7 @@ footer {
     }
 
     .fixed-col {
-        width: 150px; /* Augmenté pour mobile */
+        width: 150px;
         font-size: 14px;
     }
 
@@ -477,8 +511,8 @@ footer {
         font-size: 14px;
     }
 
-    .target-days {
-        flex-direction: column;
+    .target-days-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     }
 
     .recap-table {
@@ -491,10 +525,6 @@ footer {
             font-size: 12px;
             min-width: 60px;
         }
-
-    .daily-recap-table table {
-        max-width: 250px;
-    }
 
     .modal-content {
         max-width: 95%;
@@ -570,13 +600,17 @@ footer {
     }
 
     .fixed-col {
-        width: 120px; /* Augmenté pour mobile */
+        width: 120px;
         font-size: 12px;
     }
 
     .scrollable-col {
         width: 28px;
         font-size: 12px;
+    }
+
+    .target-days-grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     }
 
     .recap-table {
@@ -589,10 +623,6 @@ footer {
             font-size: 10px;
             min-width: 50px;
         }
-
-    .daily-recap-table table {
-        max-width: 200px;
-    }
 
     .modal-content {
         max-width: 98%;

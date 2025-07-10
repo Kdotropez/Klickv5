@@ -14,16 +14,16 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
 
     const generateTimeSlots = (start, end, interval) => {
         const slots = [];
-        let current = new Date(`2000-01-01T${start}`);
-        const endDate = new Date(`2000-01-01T${end}`);
+        let current = new Date(`2000-01-01T${start}:00Z`);
+        const endDate = new Date(`2000-01-01T${end}:00Z`);
         if (end <= start) {
             endDate.setDate(endDate.getDate() + 1);
         }
 
         while (current < endDate) {
-            const startSlot = current.toTimeString().slice(0, 5);
+            const startSlot = current.toISOString().slice(11, 16);
             current = new Date(current.getTime() + interval * 60000);
-            const endSlot = current.toTimeString().slice(0, 5);
+            const endSlot = current.toISOString().slice(11, 16);
             slots.push({ start: startSlot, end: endSlot });
         }
         return slots;
@@ -44,15 +44,27 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
             setError('Veuillez sélectionner une heure de début et de fin.');
             return;
         }
-        const start = new Date(`2000-01-01T${startTime}`);
-        let end = new Date(`2000-01-01T${endTime}`);
-        if (end <= start) {
-            end = new Date(`2000-01-02T${endTime}`);
+
+        // Convertir les heures en minutes pour une comparaison simple
+        const startMinutes = startHour * 60 + startMinute;
+        let endMinutes = endHour * 60 + endMinute;
+        const isNextDay = endTime <= startTime || endTime <= '06:00';
+
+        // Si l’heure de fin est le lendemain, ajouter 24 heures (1440 minutes)
+        if (isNextDay) {
+            endMinutes += 24 * 60;
         }
-        if (endTime > '06:00' && end.getDate() === 1) {
+
+        if (endMinutes <= startMinutes) {
+            setError('L’heure de fin doit être postérieure à l’heure de début.');
+            return;
+        }
+
+        if (endTime > '06:00' && isNextDay) {
             setError('L’heure de fin ne peut pas dépasser 06:00 le lendemain.');
             return;
         }
+
         if (![15, 30, 60].includes(Number(interval))) {
             setError('L’intervalle doit être 15, 30 ou 60 minutes.');
             return;

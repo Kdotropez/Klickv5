@@ -297,6 +297,33 @@ footer {
         z-index: 10;
     }
 
+.calendar-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.large-calendar {
+    font-size: 18px;
+    padding: 10px;
+}
+
+    .large-calendar .react-datepicker__day {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        font-size: 16px;
+    }
+
+    .large-calendar .react-datepicker__day--disabled {
+        background-color: #f0f0f0;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
 @media (max-width: 768px) {
     .step-container {
         padding: 15px;
@@ -347,6 +374,21 @@ footer {
         top: 5px;
         right: 5px;
     }
+
+    .calendar-input {
+        font-size: 14px;
+    }
+
+    .large-calendar {
+        font-size: 16px;
+    }
+
+        .large-calendar .react-datepicker__day {
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            font-size: 14px;
+        }
 }
 
 @media (max-width: 480px) {
@@ -393,4 +435,19 @@ footer {
         width: 20px;
         height: 20px;
     }
+
+    .calendar-input {
+        font-size: 12px;
+    }
+
+    .large-calendar {
+        font-size: 14px;
+    }
+
+        .large-calendar .react-datepicker__day {
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            font-size: 12px;
+        }
 }

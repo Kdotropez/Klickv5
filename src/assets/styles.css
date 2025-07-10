@@ -170,6 +170,7 @@ footer {
     margin-top: 20px;
     font-size: 14px;
     color: #999;
+    text-align: center;
 }
 
 .shop-input {
@@ -231,10 +232,11 @@ footer {
     left: 0;
     background: #fff;
     border-right: 1px solid #ddd;
-    width: 120px;
+    width: 200px; /* Augmenté pour accueillir le nom + heures */
     font-size: 16px;
     text-align: left;
     padding: 8px;
+    white-space: nowrap; /* Empêche le texte de passer à la ligne */
 }
 
 .scrollable-col {
@@ -361,6 +363,32 @@ footer {
         z-index: 10;
     }
 
+.daily-recap-table {
+    margin: 20px 0;
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+}
+
+    .daily-recap-table table {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+        border-collapse: collapse;
+    }
+
+    .daily-recap-table th,
+    .daily-recap-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .daily-recap-table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+
 .calendar-input {
     width: 100%;
     padding: 10px;
@@ -440,7 +468,7 @@ footer {
     }
 
     .fixed-col {
-        width: 100px;
+        width: 150px; /* Augmenté pour mobile */
         font-size: 14px;
     }
 
@@ -463,6 +491,10 @@ footer {
             font-size: 12px;
             min-width: 60px;
         }
+
+    .daily-recap-table table {
+        max-width: 250px;
+    }
 
     .modal-content {
         max-width: 95%;
@@ -538,7 +570,7 @@ footer {
     }
 
     .fixed-col {
-        width: 80px;
+        width: 120px; /* Augmenté pour mobile */
         font-size: 12px;
     }
 
@@ -557,6 +589,10 @@ footer {
             font-size: 10px;
             min-width: 50px;
         }
+
+    .daily-recap-table table {
+        max-width: 200px;
+    }
 
     .modal-content {
         max-width: 98%;

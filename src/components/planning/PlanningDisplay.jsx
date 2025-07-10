@@ -13,9 +13,15 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     // Generate days of the week
     const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(selectedWeek), i));
+    console.log(`PlanningDisplay: selectedWeek=${selectedWeek}, days=${JSON.stringify(days.map(d => format(d, 'yyyy-MM-dd')))}`);
 
     // Generate time slots
     const timeSlots = [];
+    console.log(`PlanningDisplay: config=${JSON.stringify(config)}`);
+    if (!config?.startTime || !config?.endTime || !config?.interval) {
+        console.error(`PlanningDisplay: config is invalid: ${JSON.stringify(config)}`);
+        return <div>Erreur : Configuration des tranches horaires invalide.</div>;
+    }
     let currentTime = new Date(`2025-01-01T${config.startTime}`);
     const endTime = new Date(`2025-01-01T${config.endTime}`);
     if (config.endTime <= config.startTime || config.endTime <= '06:00') {
@@ -25,21 +31,47 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         timeSlots.push(format(currentTime, 'HH:mm'));
         currentTime = addMinutes(currentTime, config.interval);
     }
+    console.log(`PlanningDisplay: timeSlots=${JSON.stringify(timeSlots)}`);
 
     // Calculate total hours per employee for the selected day
     const getEmployeeDailyHours = (employee, day) => {
+        if (!planning || !config?.interval) {
+            console.warn(`getEmployeeDailyHours: planning=${JSON.stringify(planning)}, config.interval=${config?.interval}`);
+            return 0;
+        }
         const dateKey = format(day, 'yyyy-MM-dd');
-        const slots = planning?.[dateKey]?.[employee] || [];
-        return (slots.length * config.interval) / 60;
+        const slots = planning[dateKey]?.[employee] || [];
+        const hours = (slots.length * config.interval) / 60;
+        console.log(`getEmployeeDailyHours: employee=${employee}, day=${dateKey}, slots=${JSON.stringify(slots)}, interval=${config.interval}, hours=${hours}`);
+        return hours;
+    };
+
+    // Calculate total hours per employee for the week
+    const getEmployeeWeeklyHours = (employee) => {
+        if (!planning || !config?.interval) {
+            console.warn(`getEmployeeWeeklyHours: planning=${JSON.stringify(planning)}, config.interval=${config?.interval}`);
+            return 0;
+        }
+        const total = days.reduce((acc, day) => {
+            const slots = planning[format(day, 'yyyy-MM-dd')]?.[employee] || [];
+            return acc + (slots.length * config.interval) / 60;
+        }, 0);
+        console.log(`getEmployeeWeeklyHours: employee=${employee}, total=${total}`);
+        return total;
     };
 
     // Calculate total hours per day
     const getDayHours = (day) => {
-        if (!planning) return 0; // Prevent TypeError if planning is undefined
-        return selectedEmployees.reduce((total, emp) => {
+        if (!planning || !config?.interval) {
+            console.warn(`getDayHours: planning=${JSON.stringify(planning)}, config.interval=${config?.interval}`);
+            return 0;
+        }
+        const total = selectedEmployees.reduce((total, emp) => {
             const slots = planning[format(day, 'yyyy-MM-dd')]?.[emp] || [];
             return total + (slots.length * config.interval) / 60;
         }, 0);
+        console.log(`getDayHours: day=${format(day, 'yyyy-MM-dd')}, total=${total}`);
+        return total;
     };
 
     // Handle cell click to toggle slot
@@ -55,6 +87,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         } else {
             newPlanning[dateKey][employee] = [...slots, time].sort();
         }
+        console.log(`handleCellClick: employee=${employee}, time=${time}, newPlanning=${JSON.stringify(newPlanning)}`);
         setPlanning(newPlanning);
         localStorage.setItem(`planning_${selectedShop}_${selectedWeek}`, JSON.stringify(newPlanning));
     };
@@ -123,10 +156,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             </div>
             <div className="button-group">
                 {selectedEmployees.map((emp) => {
-                    const totalHours = days.reduce((acc, day) => {
-                        const slots = planning?.[format(day, 'yyyy-MM-dd')]?.[emp] || [];
-                        return acc + (slots.length * config.interval) / 60;
-                    }, 0);
+                    const totalHours = getEmployeeWeeklyHours(emp);
                     return (
                         <Button
                             key={emp}
@@ -156,8 +186,30 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     );
                 })}
             </div>
+            <div className="daily-recap-table" style={{ margin: '20px 0', textAlign: 'center' }}>
+                <h3>Récapitulatif des heures pour {format(selectedDay, 'EEEE d MMMM', { locale: fr })}</h3>
+                <table style={{ width: '100%', maxWidth: '300px', margin: '0 auto', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr>
+                            <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f0f0f0', fontFamily: 'Roboto, sans-serif' }}>Employé</th>
+                            <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f0f0f0', fontFamily: 'Roboto, sans-serif' }}>Heures</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {selectedEmployees.map((emp) => {
+                            const dailyHours = getEmployeeDailyHours(emp, selectedDay);
+                            return (
+                                <tr key={emp}>
+                                    <td style={{ border: '1px solid #ddd', padding: '8px', fontFamily: 'Roboto, sans-serif' }}>{emp}</td>
+                                    <td style={{ border: '1px solid #ddd', padding: '8px', fontFamily: 'Roboto, sans-serif' }}>{dailyHours.toFixed(1)} h</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
             <div className="planning-table">
-                <table className="recap-table">
+                <table className="planning-table">
                     <thead>
                         <tr>
                             <th className="fixed-col">DE</th>
@@ -177,26 +229,30 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </tr>
                     </thead>
                     <tbody>
-                        {selectedEmployees.map((emp) => (
-                            <tr key={emp}>
-                                <td className="fixed-col">{emp} ({getEmployeeDailyHours(emp, selectedDay).toFixed(1)} H)</td>
-                                {timeSlots.map((time) => (
-                                    <td
-                                        key={time}
-                                        className="scrollable-col"
-                                        onClick={() => handleCellClick(emp, time)}
-                                        style={{
-                                            backgroundColor: planning?.[format(selectedDay, 'yyyy-MM-dd')]?.[emp]?.includes(time)
-                                                ? '#d6e6ff'
-                                                : 'transparent',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        {planning?.[format(selectedDay, 'yyyy-MM-dd')]?.[emp]?.includes(time) ? '✅' : ''}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
+                        {selectedEmployees.map((emp) => {
+                            const dailyHours = getEmployeeDailyHours(emp, selectedDay);
+                            console.log(`Rendering employee: ${emp}, dailyHours=${dailyHours}`);
+                            return (
+                                <tr key={emp}>
+                                    <td className="fixed-col">{emp} ({dailyHours.toFixed(1)} H)</td>
+                                    {timeSlots.map((time) => (
+                                        <td
+                                            key={time}
+                                            className="scrollable-col"
+                                            onClick={() => handleCellClick(emp, time)}
+                                            style={{
+                                                backgroundColor: planning?.[format(selectedDay, 'yyyy-MM-dd')]?.[emp]?.includes(time)
+                                                    ? '#d6e6ff'
+                                                    : 'transparent',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            {planning?.[format(selectedDay, 'yyyy-MM-dd')]?.[emp]?.includes(time) ? '✅' : ''}
+                                        </td>
+                                    ))}
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

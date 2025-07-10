@@ -18,10 +18,20 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const timeSlots = [];
     let currentTime = new Date(`2025-01-01T${config.startTime}`);
     const endTime = new Date(`2025-01-01T${config.endTime}`);
+    if (config.endTime <= config.startTime || config.endTime <= '06:00') {
+        endTime.setDate(endTime.getDate() + 1);
+    }
     while (currentTime < endTime) {
         timeSlots.push(format(currentTime, 'HH:mm'));
         currentTime = addMinutes(currentTime, config.interval);
     }
+
+    // Calculate total hours per employee for the selected day
+    const getEmployeeDailyHours = (employee, day) => {
+        const dateKey = format(day, 'yyyy-MM-dd');
+        const slots = planning?.[dateKey]?.[employee] || [];
+        return (slots.length * config.interval) / 60;
+    };
 
     // Calculate total hours per day
     const getDayHours = (day) => {
@@ -169,7 +179,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <tbody>
                         {selectedEmployees.map((emp) => (
                             <tr key={emp}>
-                                <td className="fixed-col">{emp}</td>
+                                <td className="fixed-col">{emp} ({getEmployeeDailyHours(emp, selectedDay).toFixed(1)} H)</td>
                                 {timeSlots.map((time) => (
                                     <td
                                         key={time}

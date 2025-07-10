@@ -29,12 +29,12 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
         return slots;
     };
 
-    const handleIncrement = (setter, value, maxValue) => {
-        setter((prev) => (prev >= maxValue ? 0 : prev + (value === 'minute' ? 15 : 1)));
+    const handleIncrement = (setter, type, maxValue) => {
+        setter((prev) => (prev >= maxValue ? 0 : prev + (type === 'minute' ? 15 : 1)));
     };
 
-    const handleDecrement = (setter, value, minValue) => {
-        setter((prev) => (prev <= minValue ? maxValue : prev - (value === 'minute' ? 15 : 1)));
+    const handleDecrement = (setter, type, minValue, maxValue) => {
+        setter((prev) => (prev <= minValue ? maxValue : prev - (type === 'minute' ? 15 : 1)));
     };
 
     const handleSubmit = () => {
@@ -101,7 +101,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                             <span className="time-value">{startHour.toString().padStart(2, '0')}</span>
                             <button
                                 className="time-picker-button"
-                                onClick={() => handleDecrement(setStartHour, 'hour', 0)}
+                                onClick={() => handleDecrement(setStartHour, 'hour', 0, 23)}
                             >
                                 <FaChevronDown />
                             </button>
@@ -117,7 +117,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                             <span className="time-value">{startMinute.toString().padStart(2, '0')}</span>
                             <button
                                 className="time-picker-button"
-                                onClick={() => handleDecrement(setStartMinute, 'minute', 0)}
+                                onClick={() => handleDecrement(setStartMinute, 'minute', 0, 45)}
                             >
                                 <FaChevronDown />
                             </button>
@@ -137,7 +137,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                             <span className="time-value">{endHour.toString().padStart(2, '0')}</span>
                             <button
                                 className="time-picker-button"
-                                onClick={() => handleDecrement(setEndHour, 'hour', 0)}
+                                onClick={() => handleDecrement(setEndHour, 'hour', 0, 23)}
                             >
                                 <FaChevronDown />
                             </button>
@@ -153,7 +153,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                             <span className="time-value">{endMinute.toString().padStart(2, '0')}</span>
                             <button
                                 className="time-picker-button"
-                                onClick={() => handleDecrement(setEndMinute, 'minute', 0)}
+                                onClick={() => handleDecrement(setEndMinute, 'minute', 0, 45)}
                             >
                                 <FaChevronDown />
                             </button>

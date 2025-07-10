@@ -29,9 +29,9 @@ const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) =>
         const slots = [...data.planning[day][employee]].sort((a, b) => {
             let aDate = parse(a, 'HH:mm', new Date('2000-01-01'));
             let bDate = parse(b, 'HH:mm', new Date('2000-01-01'));
-            const startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01'));
-            const endTime = parse(config.endTime, 'HH:mm', new Date('2000-01-01'));
-            const isNextDay = endTime <= startTime || config.endTime <= '06:00';
+            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
+            const _endTime = parse(config.endTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
+            const isNextDay = _endTime <= _startTime || config.endTime <= '06:00';
 
             if (isNextDay && a <= '06:00') aDate.setDate(aDate.getDate() + 1);
             if (isNextDay && b <= '06:00') bDate.setDate(bDate.getDate() + 1);
@@ -43,8 +43,8 @@ const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) =>
         for (let i = 1; i < slots.length; i++) {
             let prevTime = parse(slots[i - 1], 'HH:mm', new Date('2000-01-01'));
             let currTime = parse(slots[i], 'HH:mm', new Date('2000-01-01'));
-            const startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01'));
-            const isNextDay = config.endTime <= '06:00' || parse(config.endTime, 'HH:mm', new Date('2000-01-01')) <= startTime;
+            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
+            const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
 
             if (isNextDay && slots[i - 1] <= '06:00') prevTime.setDate(prevTime.getDate() + 1);
             if (isNextDay && slots[i] <= '06:00') currTime.setDate(currTime.getDate() + 1);
@@ -66,8 +66,8 @@ const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) =>
             const currPeriodStart = periods[i][0];
             let prevTime = parse(prevPeriodEnd, 'HH:mm', new Date('2000-01-01'));
             let currTime = parse(currPeriodStart, 'HH:mm', new Date('2000-01-01'));
-            const startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01'));
-            const isNextDay = config.endTime <= '06:00' || parse(config.endTime, 'HH:mm', new Date('2000-01-01')) <= startTime;
+            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
+            const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
 
             if (isNextDay && prevPeriodEnd <= '06:00') prevTime.setDate(prevTime.getDate() + 1);
             if (isNextDay && currPeriodStart <= '06:00') currTime.setDate(currTime.getDate() + 1);
@@ -85,8 +85,8 @@ const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) =>
         const firstSlot = slots[0];
         const lastSlot = slots[slots.length - 1];
         let endDate = parse(lastSlot, 'HH:mm', new Date('2000-01-01'));
-        const startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01'));
-        const isNextDay = config.endTime <= '06:00' || parse(config.endTime, 'HH:mm', new Date('2000-01-01')) <= startTime;
+        const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
+        const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
 
         if (isNextDay && lastSlot <= '06:00') {
             endDate.setDate(endDate.getDate() + 1);

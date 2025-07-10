@@ -14,18 +14,21 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
 
     const generateTimeSlots = (start, end, interval) => {
         const slots = [];
-        let current = new Date(`2000-01-01T${start}:00Z`);
-        let endDate = new Date(`2000-01-01T${end}:00Z`);
         const startMinutes = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
         let endMinutes = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
         if (endMinutes <= startMinutes) {
-            endDate.setDate(endDate.getDate() + 1);
+            endMinutes += 24 * 60; // Ajouter 24 heures si l’heure de fin est le lendemain
         }
 
-        while (current < endDate) {
-            const startSlot = current.toISOString().slice(11, 16);
-            current = new Date(current.getTime() + interval * 60000);
-            const endSlot = current.toISOString().slice(11, 16);
+        let currentMinutes = startMinutes;
+        while (currentMinutes < endMinutes) {
+            const startHour = Math.floor(currentMinutes / 60) % 24;
+            const startMinute = currentMinutes % 60;
+            const startSlot = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+            currentMinutes += interval;
+            const endHour = Math.floor(currentMinutes / 60) % 24;
+            const endMinute = currentMinutes % 60;
+            const endSlot = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
             slots.push({ start: startSlot, end: endSlot });
         }
         return slots;
@@ -42,40 +45,45 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
     const handleSubmit = () => {
         const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
         const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+        console.log(`handleSubmit: startTime=${startTime}, endTime=${endTime}, interval=${interval}`);
+
         if (!startTime || !endTime) {
             setError('Veuillez sélectionner une heure de début et de fin.');
+            console.error('Erreur: startTime ou endTime manquant');
             return;
         }
 
-        // Convertir en minutes pour une comparaison robuste
+        // Convertir en minutes pour comparaison
         const startMinutes = startHour * 60 + startMinute;
         let endMinutes = endHour * 60 + endMinute;
-
-        // Si l’heure de fin est après minuit, considérer qu’elle est le lendemain
         const isNextDay = endTime <= startTime || endTime <= '06:00';
+
+        console.log(`startMinutes=${startMinutes}, endMinutes=${endMinutes}, isNextDay=${isNextDay}`);
+
         if (isNextDay) {
-            endMinutes += 24 * 60;
+            endMinutes += 24 * 60; // Ajouter 24 heures si l’heure de fin est le lendemain
         }
 
-        // Vérification que l’heure de fin est postérieure à l’heure de début
         if (endMinutes <= startMinutes) {
             setError('L’heure de fin doit être postérieure à l’heure de début.');
+            console.error(`Erreur: endMinutes (${endMinutes}) <= startMinutes (${startMinutes})`);
             return;
         }
 
-        // Vérification que l’heure de fin ne dépasse pas 06:00 le lendemain
         if (isNextDay && endTime > '06:00') {
             setError('L’heure de fin ne peut pas dépasser 06:00 le lendemain.');
+            console.error(`Erreur: endTime (${endTime}) dépasse 06:00 le lendemain`);
             return;
         }
 
-        // Vérification de l’intervalle
         if (![15, 30, 60].includes(Number(interval))) {
             setError('L’intervalle doit être 15, 30 ou 60 minutes.');
+            console.error(`Erreur: intervalle invalide (${interval})`);
             return;
         }
 
         const timeSlots = generateTimeSlots(startTime, endTime, interval);
+        console.log('timeSlots générés:', timeSlots);
         const configData = { interval: Number(interval), startTime, endTime, timeSlots };
         saveToLocalStorage('timeSlotConfig', configData);
         onNext(configData);

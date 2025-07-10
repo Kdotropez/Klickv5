@@ -1,3 +1,9 @@
+﻿Set-Location -Path C:\Users\lefev\Projets\planning-app
+# Supprimer les dépendances existantes et le cache
+Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+# Mettre à jour package.json
+Set-Content -Path package.json -Value @"
 {
   "name": "planning-app",
   "version": "0.0.0",
@@ -26,3 +32,14 @@
     "vite": "^5.4.1"
   }
 }
+"@
+# Réinstaller les dépendances
+npm install
+# Vérifier le build en local
+npm run build
+# Ajouter les modifications à Git
+git add .
+git commit -m "Fix dependency conflict by downgrading react and react-dom to 18.3.1 and correct PowerShell syntax"
+git push origin main
+# Forcer un nouveau déploiement sur Vercel
+vercel --force --prod

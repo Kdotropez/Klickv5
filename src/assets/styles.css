@@ -10,12 +10,15 @@
     .step-container h2 {
         font-family: 'Roboto', sans-serif;
         color: #333;
+        font-size: 24px;
+        margin-bottom: 15px;
     }
 
     .step-container label {
         display: block;
-        margin: 10px 0;
+        margin: 8px 0;
         font-family: 'Roboto', sans-serif;
+        font-size: 18px;
     }
 
     .step-container select,
@@ -23,17 +26,77 @@
     .step-container input[type="text"],
     .step-container input[type="date"] {
         width: 100%;
-        padding: 8px;
+        padding: 10px;
         margin-top: 5px;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-family: 'Roboto', sans-serif;
+        font-size: 16px;
+    }
+
+.time-slot-config {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.time-slot-label {
+    margin: 5px 0;
+}
+
+.time-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.time-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.time-value {
+    font-size: 18px;
+    font-family: 'Roboto', sans-serif;
+    width: 50px;
+    text-align: center;
+    padding: 5px 0;
+}
+
+.time-separator {
+    font-size: 18px;
+    font-family: 'Roboto', sans-serif;
+    padding: 0 5px;
+}
+
+.time-picker-button {
+    background-color: #1e88e5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    font-size: 14px;
+}
+
+    .time-picker-button:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
     }
 
 .error {
     color: #dc3545;
     margin-bottom: 10px;
     font-family: 'Roboto', sans-serif;
+    font-size: 16px;
 }
 
 .error-container {
@@ -60,15 +123,16 @@
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 .button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-family: 'Roboto', sans-serif;
+    font-size: 16px;
     transition: background-color 0.2s, transform 0.2s;
 }
 
@@ -330,8 +394,44 @@ footer {
         margin: 10px;
     }
 
+        .step-container h2 {
+            font-size: 20px;
+        }
+
+        .step-container label {
+            font-size: 16px;
+        }
+
+        .step-container select,
+        .step-container input[type="time"],
+        .step-container input[type="text"],
+        .step-container input[type="date"] {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+    .time-slot-config {
+        gap: 8px;
+        max-width: 350px;
+    }
+
+    .time-picker-container {
+        gap: 5px;
+    }
+
+    .time-value {
+        font-size: 16px;
+        width: 45px;
+    }
+
+    .time-picker-button {
+        padding: 4px;
+        font-size: 12px;
+    }
+
     .button {
         padding: 8px 16px;
+        font-size: 14px;
     }
 
     .shop-input {
@@ -395,6 +495,41 @@ footer {
     .step-container {
         padding: 10px;
         margin: 5px;
+    }
+
+        .step-container h2 {
+            font-size: 18px;
+        }
+
+        .step-container label {
+            font-size: 14px;
+        }
+
+        .step-container select,
+        .step-container input[type="time"],
+        .step-container input[type="text"],
+        .step-container input[type="date"] {
+            padding: 6px;
+            font-size: 12px;
+        }
+
+    .time-slot-config {
+        gap: 6px;
+        max-width: 300px;
+    }
+
+    .time-picker-container {
+        gap: 4px;
+    }
+
+    .time-value {
+        font-size: 14px;
+        width: 40px;
+    }
+
+    .time-picker-button {
+        padding: 3px;
+        font-size: 10px;
     }
 
     .button {

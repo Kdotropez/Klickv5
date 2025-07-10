@@ -1,13 +1,15 @@
 ﻿import { useState } from 'react';
 import { format, addDays, isMonday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { FaArrowRight, FaUndo } from 'react-icons/fa';
+import { FaUndo } from 'react-icons/fa';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { saveToLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
 const WeekSelection = ({ onNext, onBack, onReset }) => {
-    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedDate, setSelectedDate] = useState(null);
     const [error, setError] = useState('');
 
     const getWeekRange = (date) => {
@@ -17,22 +19,20 @@ const WeekSelection = ({ onNext, onBack, onReset }) => {
         return `du ${format(start, 'd MMMM', { locale: fr })} au ${format(end, 'd MMMM', { locale: fr })}`;
     };
 
-    const handleSubmit = () => {
-        if (!selectedDate) {
-            setError('Veuillez sélectionner une date.');
-            return;
-        }
-        const date = new Date(selectedDate);
-        if (!isMonday(date)) {
+    const handleDateChange = (date) => {
+        if (date && isMonday(date)) {
+            const formattedDate = format(date, 'yyyy-MM-dd');
+            setSelectedDate(date);
+            setError('');
+            saveToLocalStorage('selectedWeek', formattedDate);
+            onNext(formattedDate);
+        } else {
             setError('Veuillez sélectionner un lundi.');
-            return;
         }
-        saveToLocalStorage('selectedWeek', selectedDate);
-        onNext(selectedDate);
     };
 
     const handleReset = () => {
-        setSelectedDate('');
+        setSelectedDate(null);
         setError('');
         saveToLocalStorage('selectedWeek', '');
         onReset();
@@ -44,18 +44,21 @@ const WeekSelection = ({ onNext, onBack, onReset }) => {
             {error && <p className="error">{error}</p>}
             <label>
                 Sélectionner un lundi :
-                <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                <DatePicker
+                    selected={selectedDate}
+                    onChange={handleDateChange}
+                    filterDate={isMonday}
+                    locale={fr}
+                    dateFormat="d MMMM yyyy"
+                    placeholderText="Sélectionnez un lundi"
+                    className="calendar-input"
+                    calendarClassName="large-calendar"
                 />
-                <FaArrowRight className="date-icon" />
             </label>
             {selectedDate && (
                 <p>Semaine : {getWeekRange(selectedDate)}</p>
             )}
             <div className="button-group">
-                <Button onClick={handleSubmit}>Valider</Button>
                 <Button onClick={onBack} variant="secondary">Retour</Button>
                 <Button onClick={handleReset} variant="reset">
                     <FaUndo /> Réinitialiser

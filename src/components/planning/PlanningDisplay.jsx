@@ -30,6 +30,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [targetEmployee, setTargetEmployee] = useState('');
     const [feedback, setFeedback] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetMode, setResetMode] = useState('all');
+    const [resetEmployee, setResetEmployee] = useState('');
 
     const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
 
@@ -74,6 +77,12 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             totalHours += hours;
         });
         return totalHours;
+    };
+
+    const calculateEmployeeDailyHours = (employee, dayIndex) => {
+        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+        const slots = planning[employee]?.[dayKey] || [];
+        return (slots.filter(slot => slot).length * config.interval) / 60;
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
@@ -152,18 +161,42 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
     };
 
-    const resetPlanning = () => {
-        const initializedPlanning = {};
-        selectedEmployees.forEach(employee => {
-            initializedPlanning[employee] = {};
-            for (let i = 0; i < 7; i++) {
-                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+    const handleReset = () => {
+        setShowResetModal(true);
+    };
+
+    const confirmReset = () => {
+        if (resetMode === 'all') {
+            const initializedPlanning = {};
+            selectedEmployees.forEach(employee => {
+                initializedPlanning[employee] = {};
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                    initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                }
+            });
+            setPlanning(initializedPlanning);
+            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, initializedPlanning);
+            setFeedback('Planning réinitialisé pour tous les employés.');
+        } else if (resetMode === 'employee') {
+            if (!resetEmployee) {
+                setFeedback('Veuillez sélectionner un employé à réinitialiser.');
+                return;
             }
-        });
-        setPlanning(initializedPlanning);
-        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, initializedPlanning);
-        setFeedback('Planning réinitialisé.');
+            setPlanning(prev => {
+                const updatedPlanning = JSON.parse(JSON.stringify(prev));
+                updatedPlanning[resetEmployee] = {};
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                    updatedPlanning[resetEmployee][dayKey] = Array(config.timeSlots.length).fill(false);
+                }
+                saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+                return updatedPlanning;
+            });
+            setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
+        }
+        setShowResetModal(false);
+        setResetEmployee('');
     };
 
     const copyWeek = () => {
@@ -200,7 +233,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 <Button className="button-base button-retour" onClick={onBackToConfig}>
                     Retour Configuration
                 </Button>
-                <Button className="button-base button-reinitialiser" onClick={onReset}>
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>
                     Réinitialiser
                 </Button>
             </div>
@@ -237,6 +270,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             {config.timeSlots.map((slot, index) => (
                                 <th key={slot} className="scrollable-col">{slot}</th>
                             ))}
+                            <th className="fixed-col header">Total</th>
                         </tr>
                         <tr>
                             <th className="fixed-col header">À</th>
@@ -245,12 +279,13 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                     {config.timeSlots[index + 1] || ''}
                                 </th>
                             ))}
+                            <th className="fixed-col header"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {selectedEmployees.map((employee, empIndex) => (
                             <tr key={employee}>
-                                <td className="fixed-col">{employee}</td>
+                                <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, currentDay).toFixed(1)} h)</td>
                                 {config.timeSlots.map((_, slotIndex) => {
                                     const dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
                                     const isChecked = planning[employee]?.[dayKey]?.[slotIndex] || false;
@@ -265,6 +300,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                         </td>
                                     );
                                 })}
+                                <td className="fixed-col">{calculateEmployeeDailyHours(employee, currentDay).toFixed(1)} h</td>
                             </tr>
                         ))}
                     </tbody>
@@ -369,6 +405,44 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             </Button>
                             <Button className="button-base button-reinitialiser" onClick={() => setFeedback('')}>
                                 Réinitialiser
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showResetModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <button className="modal-close" onClick={() => setShowResetModal(false)}>
+                            ✕
+                        </button>
+                        <h3 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                            Confirmer la réinitialisation
+                        </h3>
+                        <div className="form-group">
+                            <label>Mode de réinitialisation</label>
+                            <select value={resetMode} onChange={(e) => setResetMode(e.target.value)}>
+                                <option value="all">Tout le planning</option>
+                                <option value="employee">Employé spécifique</option>
+                            </select>
+                        </div>
+                        {resetMode === 'employee' && (
+                            <div className="form-group">
+                                <label>Employé à réinitialiser</label>
+                                <select value={resetEmployee} onChange={(e) => setResetEmployee(e.target.value)}>
+                                    <option value="">Choisir un employé</option>
+                                    {selectedEmployees.map(employee => (
+                                        <option key={employee} value={employee}>{employee}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <div className="button-group">
+                            <Button className="button-base button-primary" onClick={confirmReset}>
+                                Confirmer
+                            </Button>
+                            <Button className="button-base button-retour" onClick={() => setShowResetModal(false)}>
+                                Annuler
                             </Button>
                         </div>
                     </div>

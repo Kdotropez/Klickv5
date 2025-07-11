@@ -1,66 +1,53 @@
-﻿import { useState, useEffect } from 'react';
-import { FaTimes, FaUndo } from 'react-icons/fa';
+﻿import { useState } from 'react';
+import { FaTimes } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedWeek }) => {
-    const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`, []));
+const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmployees }) => {
+    const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
     const [newEmployee, setNewEmployee] = useState('');
-    const [selectedEmployees, setSelectedEmployees] = useState(loadFromLocalStorage(`selectedEmployees_${selectedShop}_${selectedWeek}`, []));
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        saveToLocalStorage(`employees_${selectedShop}`, employees);
-    }, [employees, selectedShop]);
-
-    useEffect(() => {
-        saveToLocalStorage(`selectedEmployees_${selectedShop}_${selectedWeek}`, selectedEmployees);
-    }, [selectedEmployees, selectedShop, selectedWeek]);
 
     const handleAddEmployee = () => {
         if (!newEmployee.trim()) {
-            setError('Le nom de l’employé ne peut pas être vide.');
+            setError('Veuillez entrer un nom d’employé.');
             return;
         }
         if (employees.includes(newEmployee.trim().toUpperCase())) {
             setError('Cet employé existe déjà.');
             return;
         }
-        setEmployees([...employees, newEmployee.trim().toUpperCase()]);
+        const updatedEmployees = [...employees, newEmployee.trim().toUpperCase()];
+        setEmployees(updatedEmployees);
+        saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
         setNewEmployee('');
         setError('');
     };
 
     const handleDeleteEmployee = (employee) => {
-        setEmployees(employees.filter((e) => e !== employee));
-        setSelectedEmployees(selectedEmployees.filter((e) => e !== employee));
+        const updatedEmployees = employees.filter((e) => e !== employee);
+        setEmployees(updatedEmployees);
+        saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
+        if (selectedEmployees.includes(employee)) {
+            const updatedSelected = selectedEmployees.filter((e) => e !== employee);
+            saveToLocalStorage(`employees_${selectedShop}`, updatedSelected);
+        }
     };
 
     const handleSelectEmployee = (employee) => {
-        if (selectedEmployees.includes(employee)) {
-            setSelectedEmployees(selectedEmployees.filter((e) => e !== employee));
-        } else {
-            setSelectedEmployees([...selectedEmployees, employee]);
-        }
-    };
-
-    const handleSubmit = () => {
-        if (selectedEmployees.length === 0) {
-            setError('Veuillez sélectionner au moins un employé.');
-            return;
-        }
-        saveToLocalStorage(`selectedEmployees_${selectedShop}_${selectedWeek}`, selectedEmployees);
-        onNext(selectedEmployees);
+        const updatedSelected = selectedEmployees.includes(employee)
+            ? selectedEmployees.filter((e) => e !== employee)
+            : [...selectedEmployees, employee];
+        saveToLocalStorage(`employees_${selectedShop}`, updatedSelected);
+        onNext(updatedSelected);
     };
 
     const handleReset = () => {
         setEmployees([]);
         setNewEmployee('');
-        setSelectedEmployees([]);
         setError('');
         saveToLocalStorage(`employees_${selectedShop}`, []);
-        saveToLocalStorage(`selectedEmployees_${selectedShop}_${selectedWeek}`, []);
         onReset();
     };
 
@@ -69,16 +56,15 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedWeek
             <h2>Sélection des employés</h2>
             {error && <p className="error">{error}</p>}
             <div className="shop-input">
-                <label>
-                    Ajouter un employé :
-                    <input
-                        type="text"
-                        value={newEmployee}
-                        onChange={(e) => setNewEmployee(e.target.value)}
-                        placeholder="Ex. : TITOUNE"
-                    />
-                </label>
-                <Button onClick={handleAddEmployee}>Ajouter</Button>
+                <input
+                    type="text"
+                    value={newEmployee}
+                    onChange={(e) => setNewEmployee(e.target.value)}
+                    placeholder="Nom de l’employé (ex. TITOUNE)"
+                />
+                <Button className="button-base button-primary" onClick={handleAddEmployee}>
+                    Ajouter
+                </Button>
             </div>
             <div className="shop-list">
                 {employees.map((employee) => (
@@ -96,10 +82,14 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedWeek
                 ))}
             </div>
             <div className="button-group">
-                <Button onClick={handleSubmit}>Valider</Button>
-                <Button onClick={onBack} variant="secondary">Retour</Button>
-                <Button onClick={handleReset} variant="reset">
-                    <FaUndo /> Réinitialiser
+                <Button className="button-base button-primary" onClick={() => selectedEmployees.length > 0 && onNext(selectedEmployees)} disabled={selectedEmployees.length === 0}>
+                    Valider
+                </Button>
+                <Button className="button-base button-retour" onClick={onBack}>
+                    Retour
+                </Button>
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>
+                    Réinitialiser
                 </Button>
             </div>
         </div>

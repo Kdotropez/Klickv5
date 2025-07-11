@@ -1,38 +1,41 @@
 ﻿import { useState } from 'react';
-import { format, addDays, isMonday } from 'date-fns';
+import { format, isMonday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { FaUndo } from 'react-icons/fa';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { FaArrowRight } from 'react-icons/fa';
 import { saveToLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const WeekSelection = ({ onNext, onBack, onReset }) => {
-    const [selectedDate, setSelectedDate] = useState(null);
+const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
+    const [selectedDate, setSelectedDate] = useState(selectedWeek || '');
     const [error, setError] = useState('');
 
-    const getWeekRange = (date) => {
-        if (!date) return '';
-        const start = new Date(date);
-        const end = addDays(start, 6);
-        return `du ${format(start, 'd MMMM', { locale: fr })} au ${format(end, 'd MMMM', { locale: fr })}`;
-    };
-
-    const handleDateChange = (date) => {
-        if (date && isMonday(date)) {
-            const formattedDate = format(date, 'yyyy-MM-dd');
+    const handleDateChange = (e) => {
+        const date = e.target.value;
+        const parsedDate = new Date(date);
+        if (isMonday(parsedDate)) {
             setSelectedDate(date);
             setError('');
-            saveToLocalStorage('selectedWeek', formattedDate);
-            onNext(formattedDate);
         } else {
             setError('Veuillez sélectionner un lundi.');
         }
     };
 
+    const handleSubmit = () => {
+        if (!selectedDate) {
+            setError('Veuillez sélectionner une date.');
+            return;
+        }
+        if (!isMonday(new Date(selectedDate))) {
+            setError('Veuillez sélectionner un lundi.');
+            return;
+        }
+        saveToLocalStorage('selectedWeek', selectedDate);
+        onNext(selectedDate);
+    };
+
     const handleReset = () => {
-        setSelectedDate(null);
+        setSelectedDate('');
         setError('');
         saveToLocalStorage('selectedWeek', '');
         onReset();
@@ -44,24 +47,30 @@ const WeekSelection = ({ onNext, onBack, onReset }) => {
             {error && <p className="error">{error}</p>}
             <label>
                 Sélectionner un lundi :
-                <DatePicker
-                    selected={selectedDate}
-                    onChange={handleDateChange}
-                    filterDate={isMonday}
-                    locale={fr}
-                    dateFormat="d MMMM yyyy"
-                    placeholderText="Sélectionnez un lundi"
-                    className="calendar-input"
-                    calendarClassName="large-calendar"
-                />
+                <div className="calendar-input">
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                    />
+                    <FaArrowRight className="date-icon" />
+                </div>
             </label>
             {selectedDate && (
-                <p>Semaine : {getWeekRange(selectedDate)}</p>
+                <p>
+                    Semaine du {format(new Date(selectedDate), 'EEEE d MMMM', { locale: fr })} au{' '}
+                    {format(new Date(selectedDate), 'EEEE d MMMM', { locale: fr })}
+                </p>
             )}
             <div className="button-group">
-                <Button onClick={onBack} variant="secondary">Retour</Button>
-                <Button onClick={handleReset} variant="reset">
-                    <FaUndo /> Réinitialiser
+                <Button className="button-base button-primary" onClick={handleSubmit} disabled={!selectedDate || error}>
+                    Valider
+                </Button>
+                <Button className="button-base button-retour" onClick={onBack}>
+                    Retour
+                </Button>
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>
+                    Réinitialiser
                 </Button>
             </div>
         </div>

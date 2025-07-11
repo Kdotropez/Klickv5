@@ -4,7 +4,6 @@ import { fr } from 'date-fns/locale';
 import { FaToggleOn, FaCopy, FaPaste, FaUndo } from 'react-icons/fa';
 import RecapModal from '../planning/RecapModal';
 import Button from '../common/Button';
-import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import '../../assets/styles.css';
 
 const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, planning, setStep, setPlanning }) => {
@@ -187,7 +186,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setFeedback('');
     };
 
-    console.log('PlanningDisplay: Rendering with improved copy-paste section');
+    console.log('PlanningDisplay: Rendering with improved copy-paste section and ESLint fixes');
 
     return (
         <div className="planning-container">

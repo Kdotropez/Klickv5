@@ -187,8 +187,8 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                 </label>
             </div>
             <div className="button-group">
-                <Button onClick={handleSubmit}>Valider</Button>
-                <Button onClick={handleReset} variant="reset">Réinitialiser</Button>
+                <Button className="button-base button-primary" onClick={handleSubmit}>Valider</Button>
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>Réinitialiser</Button>
             </div>
         </div>
     );

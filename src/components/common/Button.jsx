@@ -1,8 +1,9 @@
-﻿import '../../assets/styles.css';
+﻿import React from 'react';
 
-const Button = ({ children, onClick, variant = 'primary' }) => {
+const Button = ({ children, className, onClick, ...props }) => {
+    const combinedClassName = `button ${className || ''}`.trim();
     return (
-        <button className={`button button-${variant}`} onClick={onClick}>
+        <button className={combinedClassName} onClick={onClick} {...props}>
             {children}
         </button>
     );

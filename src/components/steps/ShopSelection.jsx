@@ -1,58 +1,47 @@
-﻿import { useState, useEffect } from 'react';
-import { FaTimes, FaUndo } from 'react-icons/fa';
+﻿import { useState } from 'react';
+import { FaTimes } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const ShopSelection = ({ onNext, onBack, onReset }) => {
-    const [shops, setShops] = useState(loadFromLocalStorage('shops', []));
+const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
+    const [shops, setShops] = useState(loadFromLocalStorage('shops') || []);
     const [newShop, setNewShop] = useState('');
-    const [selectedShop, setSelectedShop] = useState('');
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        saveToLocalStorage('shops', shops);
-    }, [shops]);
 
     const handleAddShop = () => {
         if (!newShop.trim()) {
-            setError('Le nom de la boutique ne peut pas être vide.');
+            setError('Veuillez entrer un nom de boutique.');
             return;
         }
         if (shops.includes(newShop.trim().toUpperCase())) {
             setError('Cette boutique existe déjà.');
             return;
         }
-        setShops([...shops, newShop.trim().toUpperCase()]);
+        const updatedShops = [...shops, newShop.trim().toUpperCase()];
+        setShops(updatedShops);
+        saveToLocalStorage('shops', updatedShops);
         setNewShop('');
         setError('');
     };
 
     const handleDeleteShop = (shop) => {
-        setShops(shops.filter((s) => s !== shop));
+        const updatedShops = shops.filter((s) => s !== shop);
+        setShops(updatedShops);
+        saveToLocalStorage('shops', updatedShops);
         if (selectedShop === shop) {
-            setSelectedShop('');
+            saveToLocalStorage('selectedShop', '');
         }
     };
 
     const handleSelectShop = (shop) => {
-        setSelectedShop(shop);
-        setError('');
-    };
-
-    const handleSubmit = () => {
-        if (!selectedShop) {
-            setError('Veuillez sélectionner une boutique.');
-            return;
-        }
-        saveToLocalStorage('selectedShop', selectedShop);
-        onNext(selectedShop);
+        saveToLocalStorage('selectedShop', shop);
+        onNext(shop);
     };
 
     const handleReset = () => {
         setShops([]);
         setNewShop('');
-        setSelectedShop('');
         setError('');
         saveToLocalStorage('shops', []);
         saveToLocalStorage('selectedShop', '');
@@ -61,19 +50,18 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
 
     return (
         <div className="step-container">
-            <h2>Sélection des boutiques</h2>
+            <h2>Sélection de la boutique</h2>
             {error && <p className="error">{error}</p>}
             <div className="shop-input">
-                <label>
-                    Ajouter une boutique :
-                    <input
-                        type="text"
-                        value={newShop}
-                        onChange={(e) => setNewShop(e.target.value)}
-                        placeholder="Ex. : CANNES"
-                    />
-                </label>
-                <Button onClick={handleAddShop}>Ajouter</Button>
+                <input
+                    type="text"
+                    value={newShop}
+                    onChange={(e) => setNewShop(e.target.value)}
+                    placeholder="Nom de la boutique (ex. CANNES)"
+                />
+                <Button className="button-base button-primary" onClick={handleAddShop}>
+                    Ajouter
+                </Button>
             </div>
             <div className="shop-list">
                 {shops.map((shop) => (
@@ -91,10 +79,14 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                 ))}
             </div>
             <div className="button-group">
-                <Button onClick={handleSubmit}>Valider</Button>
-                <Button onClick={onBack} variant="secondary">Retour</Button>
-                <Button onClick={handleReset} variant="reset">
-                    <FaUndo /> Réinitialiser
+                <Button className="button-base button-primary" onClick={() => selectedShop && onNext(selectedShop)} disabled={!selectedShop}>
+                    Valider
+                </Button>
+                <Button className="button-base button-retour" onClick={onBack}>
+                    Retour
+                </Button>
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>
+                    Réinitialiser
                 </Button>
             </div>
         </div>

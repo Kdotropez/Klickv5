@@ -66,7 +66,7 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                     type="text"
                     value={newShop}
                     onChange={(e) => setNewShop(e.target.value)}
-                    placeholder="Nom de la boutique (ex. CANNES)"
+                    placeholder="ex. CANNES"
                     style={{
                         padding: '8px',
                         borderRadius: '4px',
@@ -87,38 +87,31 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                     Ajouter
                 </Button>
             </div>
-            <div className="shop-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+            <div className="shop-list">
                 {shops.map((shop, index) => (
-                    <div key={shop} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div key={shop} className="shop-item">
                         <button
+                            className="shop-button"
                             onClick={() => handleSelectShop(shop)}
                             style={{
                                 backgroundColor: selectedShop === shop ? pastelColors[index % pastelColors.length] : '#f0f0f0',
                                 color: selectedShop === shop ? '#fff' : '#333',
-                                padding: '10px',
                                 borderRadius: '6px',
                                 border: `1px solid ${pastelColors[index % pastelColors.length]}`,
                                 fontFamily: 'Roboto, sans-serif',
                                 fontSize: '14px',
                                 cursor: 'pointer',
-                                flex: '1',
-                                transition: 'transform 0.2s, background-color 0.2s',
-                                transform: selectedShop === shop ? 'scale(1.05)' : 'none'
+                                transition: 'transform 0.2s, background-color 0.2s'
                             }}
-                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.target.style.transform = selectedShop === shop ? 'scale(1.05)' : 'scale(1)'}
-                            onMouseDown={(e) => e.target.style.transform = 'scale(0.95)'}
-                            onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
                             aria-label={`Sélectionner la boutique ${shop}`}
                         >
-                            {shop}
+                            <span>{shop}</span>
+                            <FaTimes
+                                className="delete-icon"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteShop(shop); }}
+                                aria-label={`Supprimer la boutique ${shop}`}
+                            />
                         </button>
-                        <FaTimes
-                            className="delete-icon"
-                            onClick={() => handleDeleteShop(shop)}
-                            style={{ cursor: 'pointer', color: '#e53935', fontSize: '16px' }}
-                            aria-label={`Supprimer la boutique ${shop}`}
-                        />
                     </div>
                 ))}
             </div>

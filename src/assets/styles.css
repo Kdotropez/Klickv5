@@ -211,25 +211,30 @@ footer {
 }
 
 .shop-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
     margin: 20px 0;
 }
 
 .shop-item {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
 }
 
 .shop-button {
-    width: 100%;
-    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
     border-radius: 6px;
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
+    width: 100%;
+    max-width: 150px;
 }
 
     .shop-button:hover {
@@ -240,14 +245,15 @@ footer {
         transform: scale(0.95);
     }
 
-.delete-icon {
-    cursor: pointer;
-    color: #dc3545;
-}
-
-    .delete-icon:hover {
-        color: #d32f2f;
+    .shop-button .delete-icon {
+        margin-left: 8px;
+        color: #e53935;
+        font-size: 14px;
     }
+
+        .shop-button .delete-icon:hover {
+            color: #d32f2f;
+        }
 
 .date-icon {
     margin-left: 10px;
@@ -554,7 +560,13 @@ footer {
     }
 
     .shop-list {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .shop-button {
+        max-width: 120px;
+        padding: 6px 10px;
+        font-size: 12px;
     }
 
     .fixed-col {
@@ -660,7 +672,13 @@ footer {
     }
 
     .shop-list {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
+
+    .shop-button {
+        max-width: 100px;
+        padding: 5px 8px;
+        font-size: 12px;
     }
 
     .fixed-col {

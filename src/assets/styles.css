@@ -197,6 +197,16 @@
             transform: scale(1.05);
         }
 
+.button-validate {
+    background-color: #1e88e5;
+    color: #fff;
+}
+
+    .button-validate:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
 .shop-input {
     display: flex;
     flex-direction: column;
@@ -751,6 +761,12 @@
         font-size: 13px;
     }
 
+    .button-validate {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
     .month-select,
     .week-select {
         width: 180px;
@@ -920,6 +936,12 @@
     .employee-button {
         width: 160px;
         padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .button-validate {
+        width: 160px;
+        padding: 5px;
         font-size: 12px;
     }
 

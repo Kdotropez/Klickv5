@@ -34,7 +34,6 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
         const updatedSelected = selectedEmployees.filter((e) => e !== employee);
         saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
-        onNext(updatedSelected);
     };
 
     const handleSelectEmployee = (employee) => {
@@ -42,7 +41,14 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
             ? selectedEmployees.filter((e) => e !== employee)
             : [...selectedEmployees, employee];
         saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
-        onNext(updatedSelected);
+    };
+
+    const handleValidate = () => {
+        if (selectedEmployees.length === 0) {
+            setError('Veuillez sélectionner au moins un employé.');
+            return;
+        }
+        onNext(selectedEmployees);
     };
 
     const handleReset = () => {
@@ -83,6 +89,15 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
                     </div>
                 ))}
             </div>
+            <Button
+                className="button-base button-validate"
+                onClick={handleValidate}
+                disabled={selectedEmployees.length === 0}
+                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px', fontSize: '14px', width: '200px', margin: '15px auto', display: 'block' }}
+                aria-label="Valider la sélection"
+            >
+                Valider
+            </Button>
             <div className="employee-input">
                 <input
                     type="text"

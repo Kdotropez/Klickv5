@@ -338,6 +338,31 @@
             color: #d32f2f;
         }
 
+.week-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.month-select,
+.week-select {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 200px;
+    background-color: #fff;
+}
+
+.week-submit-button {
+    padding: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
 .date-icon {
     margin-left: 10px;
     color: #1e88e5;
@@ -694,6 +719,19 @@
         font-size: 13px;
     }
 
+    .month-select,
+    .week-select {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .week-submit-button {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
     .fixed-col {
         width: 150px;
         font-size: 14px;
@@ -845,6 +883,19 @@
     .employee-button {
         width: 160px;
         padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .month-select,
+    .week-select {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .week-submit-button {
+        width: 160px;
+        padding: 5px;
         font-size: 12px;
     }
 

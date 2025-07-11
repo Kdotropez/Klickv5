@@ -1,13 +1,15 @@
-﻿import { useState } from 'react';
-import { format, startOfWeek, addWeeks, isMonday } from 'date-fns';
+﻿import { useState, useEffect } from 'react';
+import { format, startOfMonth, addDays, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Button from '../common/Button';
+import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import '../../assets/styles.css';
 
 const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
-    const [selectedMonth, setSelectedMonth] = useState('');
-    const [selectedWeek, setSelectedWeek] = useState(selectedWeek || '');
+    const [selectedMonth, setSelectedMonth] = useState('2025-07'); // Mois actuel (juillet 2025)
+    const [localSelectedWeek, setLocalSelectedWeek] = useState(selectedWeek || '');
     const [error, setError] = useState('');
+    const [savedWeeks, setSavedWeeks] = useState(loadFromLocalStorage('savedWeeks') || []);
 
     const months = Array.from({ length: 12 }, (_, i) => {
         const date = new Date(2025, 6 + i, 1);
@@ -16,20 +18,24 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
 
     const getWeeksForMonth = (month) => {
         const [year, monthIndex] = month.split('-').map(Number);
-        const startDate = new Date(year, monthIndex - 1, 1);
+        const startDate = startOfMonth(new Date(year, monthIndex - 1, 1));
         const weeks = [];
-        let currentMonday = startOfWeek(startDate, { weekStartsOn: 1 });
-        if (!isMonday(currentMonday)) {
-            currentMonday = addWeeks(currentMonday, 1);
+        let currentDate = startDate;
+        const endOfMonth = new Date(year, monthIndex, 0); // Dernier jour du mois
+
+        // Trouver le premier lundi
+        while (currentDate.getDay() !== 1 && currentDate <= endOfMonth) {
+            currentDate = addDays(currentDate, 1);
         }
-        while (currentMonday.getMonth() === monthIndex - 1 && currentMonday.getFullYear() === year) {
-            const weekEnd = new Date(currentMonday);
-            weekEnd.setDate(currentMonday.getDate() + 6);
+
+        // Générer les semaines
+        while (currentDate <= endOfMonth) {
+            const weekEnd = addDays(currentDate, 6);
             weeks.push({
-                value: format(currentMonday, 'yyyy-MM-dd'),
-                label: `Du ${format(currentMonday, 'd MMMM', { locale: fr })} au ${format(weekEnd, 'd MMMM yyyy', { locale: fr })}`
+                value: format(currentDate, 'yyyy-MM-dd'),
+                label: `Du ${format(currentDate, 'd MMMM', { locale: fr })} au ${format(weekEnd, 'd MMMM yyyy', { locale: fr })}`
             });
-            currentMonday = addWeeks(currentMonday, 1);
+            currentDate = addWeeks(currentDate, 1);
         }
         return weeks;
     };
@@ -38,28 +44,32 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
 
     const handleMonthChange = (e) => {
         setSelectedMonth(e.target.value);
-        setSelectedWeek('');
+        setLocalSelectedWeek('');
         setError('');
     };
 
     const handleWeekChange = (e) => {
         const week = e.target.value;
-        setSelectedWeek(week);
+        setLocalSelectedWeek(week);
         setError('');
+        if (week) {
+            const updatedSavedWeeks = Array.from(new Set([...savedWeeks, week]));
+            setSavedWeeks(updatedSavedWeeks);
+            saveToLocalStorage('savedWeeks', updatedSavedWeeks);
+            saveToLocalStorage('selectedWeek', week);
+            onNext(week);
+        }
     };
 
-    const handleSubmit = () => {
-        if (!selectedWeek) {
-            setError('Veuillez sélectionner une semaine.');
-            return;
-        }
-        saveToLocalStorage('selectedWeek', selectedWeek);
-        onNext(selectedWeek);
+    const handleSavedWeekSelect = (week) => {
+        setLocalSelectedWeek(week);
+        saveToLocalStorage('selectedWeek', week);
+        onNext(week);
     };
 
     const handleReset = () => {
-        setSelectedMonth('');
-        setSelectedWeek('');
+        setSelectedMonth('2025-07');
+        setLocalSelectedWeek('');
         setError('');
         saveToLocalStorage('selectedWeek', '');
         onReset();
@@ -87,7 +97,7 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                 </select>
                 {selectedMonth && (
                     <select
-                        value={selectedWeek}
+                        value={localSelectedWeek}
                         onChange={handleWeekChange}
                         className="week-select"
                         aria-label="Sélectionner une semaine"
@@ -100,15 +110,30 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                         ))}
                     </select>
                 )}
-                <Button
-                    className="button-base button-primary week-submit-button"
-                    onClick={handleSubmit}
-                    disabled={!selectedWeek}
-                    aria-label="Valider la semaine"
-                >
-                    Valider
-                </Button>
             </div>
+            {savedWeeks.length > 0 && (
+                <div className="saved-weeks">
+                    <h3 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', margin: '15px 0', fontSize: '18px' }}>
+                        Semaines sauvegardées
+                    </h3>
+                    {savedWeeks.map((week, index) => (
+                        <div key={week} className="saved-week-item">
+                            <button
+                                className="saved-week-button"
+                                onClick={() => handleSavedWeekSelect(week)}
+                                style={{
+                                    backgroundColor: localSelectedWeek === week ? '#d6e6ff' : '#f0f0f0',
+                                    color: '#333',
+                                    border: '1px solid #d6e6ff',
+                                }}
+                                aria-label={`Sélectionner la semaine ${week}`}
+                            >
+                                {`Du ${format(new Date(week), 'd MMMM', { locale: fr })} au ${format(new Date(week).setDate(new Date(week).getDate() + 6), 'd MMMM yyyy', { locale: fr })}`}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
             <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
                 <Button
                     className="button-base button-retour"

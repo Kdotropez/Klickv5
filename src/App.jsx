@@ -15,8 +15,7 @@ function App() {
     const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     const handleNext = async (data) => {
-        console.log('handleNext:', { step, data }); // Débogage
-        // Ajouter un léger délai pour s'assurer que le formulaire est soumis
+        console.log('handleNext:', { step, data });
         await new Promise(resolve => setTimeout(resolve, 0));
         if (step === 1) {
             setConfig(data);
@@ -34,23 +33,36 @@ function App() {
     };
 
     const handleBack = () => {
-        console.log('handleBack:', { step }); // Débogage
-        if (step === 5) {
-            setStep(4);
-        } else if (step === 4) {
-            setSelectedEmployees([]);
-            setStep(3);
-        } else if (step === 3) {
-            setSelectedWeek('');
-            setStep(2);
-        } else if (step === 2) {
-            setSelectedShop('');
-            setStep(1);
-        }
+        console.log('handleBack:', { step });
+        setStep(4);
+    };
+
+    const handleBackToShop = () => {
+        console.log('handleBackToShop:', { step });
+        setSelectedEmployees([]);
+        setSelectedWeek('');
+        setSelectedShop('');
+        setStep(2);
+    };
+
+    const handleBackToWeek = () => {
+        console.log('handleBackToWeek:', { step });
+        setSelectedEmployees([]);
+        setSelectedWeek('');
+        setStep(3);
+    };
+
+    const handleBackToConfig = () => {
+        console.log('handleBackToConfig:', { step });
+        setSelectedEmployees([]);
+        setSelectedWeek('');
+        setSelectedShop('');
+        setConfig(null);
+        setStep(1);
     };
 
     const handleReset = () => {
-        console.log('handleReset:', { step }); // Débogage
+        console.log('handleReset:', { step });
         if (step === 1) {
             setConfig(null);
         } else if (step === 2) {
@@ -59,6 +71,12 @@ function App() {
             setSelectedWeek('');
         } else if (step === 4) {
             setSelectedEmployees([]);
+        } else if (step === 5) {
+            setSelectedEmployees([]);
+            setSelectedWeek('');
+            setSelectedShop('');
+            setConfig(null);
+            setStep(1);
         }
     };
 
@@ -90,6 +108,10 @@ function App() {
                         selectedWeek={selectedWeek}
                         selectedEmployees={selectedEmployees}
                         onBack={handleBack}
+                        onBackToShop={handleBackToShop}
+                        onBackToWeek={handleBackToWeek}
+                        onBackToConfig={handleBackToConfig}
+                        onReset={handleReset}
                     />
                 )}
             </div>

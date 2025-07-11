@@ -7,7 +7,7 @@ import Button from '../common/Button';
 import RecapModal from './RecapModal';
 import '../../assets/styles.css';
 
-const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, onBack }) => {
+const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, onBack, onBackToShop, onBackToWeek, onBackToConfig, onReset }) => {
     const [currentDay, setCurrentDay] = useState(0);
     const [planning, setPlanning] = useState(() => {
         const savedPlanning = loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {};
@@ -19,7 +19,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
             }
         });
-        console.log('Initial planning:', initializedPlanning); // Débogage
+        console.log('Initial planning:', initializedPlanning);
         return initializedPlanning;
     });
     const [showCopyPaste, setShowCopyPaste] = useState(false);
@@ -39,7 +39,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     });
 
     useEffect(() => {
-        // Synchroniser planning avec selectedEmployees
         setPlanning(prev => {
             const updatedPlanning = { ...prev };
             selectedEmployees.forEach(employee => {
@@ -51,20 +50,19 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     }
                 }
             });
-            // Supprimer les employés qui ne sont plus sélectionnés
             Object.keys(updatedPlanning).forEach(employee => {
                 if (!selectedEmployees.includes(employee)) {
                     delete updatedPlanning[employee];
                 }
             });
-            console.log('Synchronized planning:', updatedPlanning); // Débogage
+            console.log('Synchronized planning:', updatedPlanning);
             return updatedPlanning;
         });
     }, [selectedEmployees, selectedWeek, config]);
 
     useEffect(() => {
         saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
-        console.log('Saved planning to localStorage:', planning); // Débogage
+        console.log('Saved planning to localStorage:', planning);
     }, [planning, selectedShop, selectedWeek]);
 
     const calculateDailyHours = (employee, dayIndex) => {
@@ -74,20 +72,18 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
-        console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning }); // Débogage
+        console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning });
         setPlanning(prev => {
-            const updatedPlanning = { ...prev };
+            const updatedPlanning = JSON.parse(JSON.stringify(prev));
             if (!updatedPlanning[employee]) {
                 updatedPlanning[employee] = {};
             }
             if (!updatedPlanning[employee][dayKey]) {
                 updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
             }
-            const newDaySlots = [...updatedPlanning[employee][dayKey]];
-            newDaySlots[slotIndex] = !newDaySlots[slotIndex];
-            updatedPlanning[employee][dayKey] = newDaySlots;
-            console.log('Updated planning:', updatedPlanning); // Débogage
-            return { ...updatedPlanning };
+            updatedPlanning[employee][dayKey][slotIndex] = !updatedPlanning[employee][dayKey][slotIndex];
+            console.log('Updated planning:', updatedPlanning);
+            return updatedPlanning;
         });
     };
 
@@ -126,7 +122,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             return;
         }
         setPlanning(prev => {
-            const updatedPlanning = { ...prev };
+            const updatedPlanning = JSON.parse(JSON.stringify(prev));
             targetDays.forEach(dayIndex => {
                 const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
                 if (copied.mode === 'all') {
@@ -145,7 +141,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     updatedPlanning[target][dayKey] = [...copied.data[employee]];
                 }
             });
-            return { ...updatedPlanning };
+            return updatedPlanning;
         });
         setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
     };
@@ -189,7 +185,16 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 <Button className="button-base button-retour" onClick={onBack}>
                     Retour Employés
                 </Button>
-                <Button className="button-base button-reinitialiser" onClick={resetPlanning}>
+                <Button className="button-base button-retour" onClick={onBackToShop}>
+                    Retour Boutique
+                </Button>
+                <Button className="button-base button-retour" onClick={onBackToWeek}>
+                    Retour Semaine
+                </Button>
+                <Button className="button-base button-retour" onClick={onBackToConfig}>
+                    Retour Configuration
+                </Button>
+                <Button className="button-base button-reinitialiser" onClick={onReset}>
                     Réinitialiser
                 </Button>
             </div>

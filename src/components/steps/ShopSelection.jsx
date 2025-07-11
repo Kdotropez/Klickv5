@@ -61,6 +61,29 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                 Sélection de la boutique
             </h2>
             {error && <p className="error" style={{ color: '#e53935', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
+            <div className="shop-list">
+                {shops.map((shop, index) => (
+                    <div key={shop} className="shop-item">
+                        <button
+                            className="shop-button"
+                            onClick={() => handleSelectShop(shop)}
+                            style={{
+                                backgroundColor: selectedShop === shop ? pastelColors[index % pastelColors.length] : pastelColors[index % pastelColors.length],
+                                color: '#333',
+                                border: `1px solid ${pastelColors[index % pastelColors.length]}`,
+                            }}
+                            aria-label={`Sélectionner la boutique ${shop}`}
+                        >
+                            <span>{shop}</span>
+                            <FaTimes
+                                className="delete-icon"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteShop(shop); }}
+                                aria-label={`Supprimer la boutique ${shop}`}
+                            />
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div className="shop-input">
                 <input
                     type="text"
@@ -78,30 +101,7 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                     Ajouter
                 </Button>
             </div>
-            <div className="shop-list">
-                {shops.map((shop, index) => (
-                    <div key={shop} className="shop-item">
-                        <button
-                            className="shop-button"
-                            onClick={() => handleSelectShop(shop)}
-                            style={{
-                                backgroundColor: pastelColors[index % pastelColors.length],
-                                color: '#333',
-                                border: `1px solid ${pastelColors[index % pastelColors.length]}`,
-                            }}
-                            aria-label={`Sélectionner la boutique ${shop}`}
-                        >
-                            <span>{shop}</span>
-                            <FaTimes
-                                className="delete-icon"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteShop(shop); }}
-                                aria-label={`Supprimer la boutique ${shop}`}
-                            />
-                        </button>
-                    </div>
-                ))}
-            </div>
-            <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
                 <Button
                     className="button-base button-retour"
                     onClick={onBack}

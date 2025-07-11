@@ -199,9 +199,10 @@
 
 .shop-input {
     display: flex;
+    flex-direction: column;
     gap: 8px;
     align-items: center;
-    margin-bottom: 15px;
+    margin: 15px 0;
 }
 
 .shop-input-field {
@@ -271,7 +272,7 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    margin-bottom: 15px;
+    margin: 15px 0;
 }
 
 .employee-input-field {
@@ -654,7 +655,8 @@
     }
 
     .employee-input {
-        flex-direction: column;
+        flex-direction: row;
+        gap: 8px;
         align-items: center;
     }
 
@@ -804,6 +806,12 @@
         width: 160px;
         padding: 5px;
         font-size: 12px;
+    }
+
+    .employee-input {
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
     }
 
     .employee-input-field {

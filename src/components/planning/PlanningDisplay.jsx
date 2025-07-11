@@ -70,6 +70,17 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         console.log('Saved planning to localStorage:', planning);
     }, [planning, selectedShop, selectedWeek]);
 
+    useEffect(() => {
+        // Sauvegarder le planning comme dernier planning utilisé avant de quitter
+        return () => {
+            saveToLocalStorage(`lastPlanning_${selectedShop}`, {
+                week: selectedWeek,
+                planning: planning
+            });
+            console.log('Saved last planning:', { week: selectedWeek, planning });
+        };
+    }, [planning, selectedShop, selectedWeek]);
+
     const calculateDailyHours = (dayIndex) => {
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
         let totalHours = 0;

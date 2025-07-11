@@ -5,7 +5,7 @@ import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import '../../assets/styles.css';
 
-const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
+const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) => {
     const [selectedMonth, setSelectedMonth] = useState('2025-07');
     const [localSelectedWeek, setLocalSelectedWeek] = useState(selectedWeek || '');
     const [error, setError] = useState('');
@@ -54,6 +54,14 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
             const updatedSavedWeeks = Array.from(new Set([...savedWeeks, week]));
             setSavedWeeks(updatedSavedWeeks);
             saveToLocalStorage('savedWeeks', updatedSavedWeeks);
+
+            // Copier le dernier planning sauvegardé pour la nouvelle semaine
+            const lastPlanning = loadFromLocalStorage(`lastPlanning_${selectedShop}`);
+            if (lastPlanning && lastPlanning.planning) {
+                saveToLocalStorage(`planning_${selectedShop}_${week}`, lastPlanning.planning);
+                console.log('Copied last planning to new week:', { newWeek: week, planning: lastPlanning.planning });
+            }
+
             saveToLocalStorage('selectedWeek', week);
             onNext(week);
         }
@@ -61,6 +69,14 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
 
     const handleSavedWeekSelect = (week) => {
         setLocalSelectedWeek(week);
+
+        // Copier le dernier planning sauvegardé pour la semaine sélectionnée
+        const lastPlanning = loadFromLocalStorage(`lastPlanning_${selectedShop}`);
+        if (lastPlanning && lastPlanning.planning) {
+            saveToLocalStorage(`planning_${selectedShop}_${week}`, lastPlanning.planning);
+            console.log('Copied last planning to saved week:', { newWeek: week, planning: lastPlanning.planning });
+        }
+
         saveToLocalStorage('selectedWeek', week);
         onNext(week);
     };

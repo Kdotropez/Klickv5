@@ -38,15 +38,8 @@ const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
     const handleSelectShop = (shop) => {
         setLocalSelectedShop(shop);
         setError('');
-    };
-
-    const handleValidate = () => {
-        if (!localSelectedShop) {
-            setError('Veuillez sélectionner une boutique.');
-            return;
-        }
-        saveToLocalStorage('selectedShop', localSelectedShop);
-        onNext(localSelectedShop);
+        saveToLocalStorage('selectedShop', shop);
+        onNext(shop);
     };
 
     const handleReset = () => {
@@ -106,9 +99,6 @@ const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
                 )}
                 <Button className="button-base button-reinitialiser" onClick={handleReset}>
                     Réinitialiser
-                </Button>
-                <Button className="button-base button-validate" onClick={handleValidate}>
-                    Valider
                 </Button>
             </div>
         </div>

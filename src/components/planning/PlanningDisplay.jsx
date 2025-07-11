@@ -65,16 +65,21 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         console.log('Saved planning to localStorage:', planning);
     }, [planning, selectedShop, selectedWeek]);
 
-    const calculateDailyHours = (employee, dayIndex) => {
+    const calculateDailyHours = (dayIndex) => {
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
-        const slots = planning[employee]?.[dayKey] || [];
-        return (slots.filter(slot => slot).length * config.interval) / 60;
+        let totalHours = 0;
+        selectedEmployees.forEach(employee => {
+            const slots = planning[employee]?.[dayKey] || [];
+            const hours = (slots.filter(slot => slot).length * config.interval) / 60;
+            totalHours += hours;
+        });
+        return totalHours;
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
         console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning });
         setPlanning(prev => {
-            const updatedPlanning = JSON.parse(JSON.stringify(prev)); // Deep copy pour éviter mutations
+            const updatedPlanning = JSON.parse(JSON.stringify(prev));
             const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
             if (!updatedPlanning[employee]) {
                 updatedPlanning[employee] = {};
@@ -206,7 +211,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         className={`button-base button-jour ${currentDay === index ? 'selected' : ''}`}
                         onClick={() => setCurrentDay(index)}
                     >
-                        {day} ({calculateDailyHours(selectedEmployees, index).toFixed(1)} h)
+                        {day} ({calculateDailyHours(index).toFixed(1)} h)
                     </Button>
                 ))}
             </div>
@@ -217,7 +222,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal(employee)}
                     >
-                        Recap {employee}: {days.reduce((sum, _, index) => sum + calculateDailyHours(employee, index), 0).toFixed(1)} h
+                        Recap {employee}: {days.reduce((sum, _, index) => sum + calculateDailyHours(index), 0).toFixed(1)} h
                     </Button>
                 ))}
                 <Button className="button-base button-recap" onClick={() => setShowRecapModal('week')}>

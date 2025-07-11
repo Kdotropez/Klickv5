@@ -1,10 +1,476 @@
-﻿/* Existing styles remain unchanged */
-.planning-container {
-    max-width: 1200px;
-    margin: 0 auto;
+﻿.step-container {
+    background: #fff;
     padding: 20px;
-    font-family: 'Roboto', sans-serif;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    margin: 20px auto;
 }
+
+    .step-container h2 {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+
+    .step-container label {
+        display: block;
+        margin: 8px 0;
+        font-family: 'Roboto', sans-serif;
+        font-size: 18px;
+    }
+
+    .step-container select,
+    .step-container input[type="time"],
+    .step-container input[type="text"],
+    .step-container input[type="date"] {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 16px;
+    }
+
+.time-slot-config {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.time-slot-label {
+    margin: 5px 0;
+}
+
+.time-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.time-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.time-value {
+    font-size: 18px;
+    font-family: 'Roboto', sans-serif;
+    width: 50px;
+    text-align: center;
+    padding: 5px 0;
+}
+
+.time-separator {
+    font-size: 18px;
+    font-family: 'Roboto', sans-serif;
+    padding: 0 5px;
+}
+
+.time-picker-button {
+    background-color: #1e88e5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    font-size: 14px;
+}
+
+    .time-picker-button:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
+.error {
+    color: #dc3545;
+    margin-bottom: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+}
+
+.error-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+    .error-container h2 {
+        font-family: 'Roboto', sans-serif;
+        color: #dc3545;
+    }
+
+    .error-container p {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+    }
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.button-base {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.button-primary {
+    background-color: #1e88e5;
+    color: #fff;
+}
+
+    .button-primary:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
+.button-retour {
+    background-color: #1e88e5;
+    color: #fff;
+}
+
+    .button-retour:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
+.button-reinitialiser {
+    background-color: #e53935;
+    color: #fff;
+}
+
+    .button-reinitialiser:hover {
+        background-color: #d32f2f;
+        transform: scale(1.05);
+    }
+
+.button-recap {
+    background-color: #2e7d32;
+    color: #fff;
+}
+
+    .button-recap:hover {
+        background-color: #1b5e20;
+        transform: scale(1.05);
+    }
+
+.button-jour {
+    background-color: #4a90e2;
+    color: #fff;
+}
+
+    .button-jour:hover {
+        background-color: #357abd;
+        transform: scale(1.05);
+    }
+
+    .button-jour.selected {
+        background-color: #424242;
+        color: #fff;
+    }
+
+        .button-jour.selected:hover {
+            background-color: #333;
+            transform: scale(1.05);
+        }
+
+.button-validate {
+    background-color: #1e88e5;
+    color: #fff;
+}
+
+    .button-validate:hover {
+        background-color: #1565c0;
+        transform: scale(1.05);
+    }
+
+.shop-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.shop-input-field {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 200px;
+}
+
+.shop-add-button {
+    padding: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
+.shop-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+}
+
+.shop-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    width: 200px;
+}
+
+    .shop-button:hover {
+        transform: scale(1.05);
+    }
+
+    .shop-button:active {
+        transform: scale(0.95);
+    }
+
+    .shop-button .delete-icon {
+        margin-left: 8px;
+        color: #e53935;
+        font-size: 14px;
+    }
+
+        .shop-button .delete-icon:hover {
+            color: #d32f2f;
+        }
+
+.employee-input {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.employee-input-field {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 200px;
+}
+
+.employee-add-button {
+    padding: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
+.employee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.employee-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+}
+
+.employee-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    width: 200px;
+}
+
+    .employee-button:hover {
+        transform: scale(1.05);
+    }
+
+    .employee-button:active {
+        transform: scale(0.95);
+    }
+
+    .employee-button.selected {
+        border: 2px solid #1e88e5;
+    }
+
+    .employee-button .delete-icon {
+        margin-left: 8px;
+        color: #e53935;
+        font-size: 14px;
+    }
+
+        .employee-button .delete-icon:hover {
+            color: #d32f2f;
+        }
+
+.week-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.month-select,
+.week-select {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 200px;
+    background-color: #fff;
+}
+
+.saved-weeks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.saved-week-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+}
+
+.saved-week-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    width: 200px;
+}
+
+    .saved-week-button:hover {
+        transform: scale(1.05);
+    }
+
+    .saved-week-button:active {
+        transform: scale(0.95);
+    }
+
+.date-icon {
+    margin-left: 10px;
+    color: #1e88e5;
+}
+
+.planning-container {
+    margin-top: 20px;
+}
+
+.day-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.table-container {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.fixed-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    border-right: 1px solid #ddd;
+    width: 200px;
+    font-size: 16px;
+    text-align: left;
+    padding: 8px;
+    white-space: nowrap;
+}
+
+    .fixed-col.header {
+        text-align: right;
+    }
+
+.scrollable-col {
+    width: 36px;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid #ddd;
+    padding: 8px;
+    cursor: pointer;
+}
+
+    .scrollable-col:hover {
+        background-color: #f0f0f0;
+        transform: scale(1.05);
+    }
+
+    .scrollable-col:active {
+        transform: scale(0.95);
+    }
 
 .navigation-buttons {
     display: flex;
@@ -13,135 +479,12 @@
     margin-bottom: 20px;
 }
 
-.day-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
 .recap-buttons {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     margin-bottom: 20px;
 }
-
-.table-container {
-    overflow-x: auto;
-    max-width: 100%;
-}
-
-.planning-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: 'Inter', sans-serif;
-}
-
-.fixed-col {
-    position: sticky;
-    left: 0;
-    background: white;
-    z-index: 1;
-    width: 120px;
-    font-size: 16px;
-}
-
-@media (max-width: 768px) {
-    .fixed-col {
-        width: 100px;
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 480px) {
-    .fixed-col {
-        width: 80px;
-        font-size: 12px;
-    }
-}
-
-.scrollable-col {
-    width: 36px;
-    text-align: center;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-@media (max-width: 768px) {
-    .scrollable-col {
-        width: 32px;
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 480px) {
-    .scrollable-col {
-        width: 28px;
-        font-size: 12px;
-    }
-}
-
-.scrollable-col:hover {
-    background-color: #f0f0f0;
-}
-
-.button-base {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'Roboto', sans-serif;
-    font-size: 14px;
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-.button-primary {
-    background-color: #1e88e5;
-    color: white;
-}
-
-    .button-primary:hover {
-        background-color: #1565c0;
-    }
-
-.button-retour {
-    background-color: #1e88e5;
-    color: white;
-}
-
-    .button-retour:hover {
-        background-color: #1565c0;
-    }
-
-.button-reinitialiser {
-    background-color: #e53935;
-    color: white;
-}
-
-    .button-reinitialiser:hover {
-        background-color: #d32f2f;
-    }
-
-.button-jour {
-    background-color: #4a90e2;
-    color: white;
-}
-
-    .button-jour:hover {
-        background-color: #357abd;
-    }
-
-    .button-jour.selected {
-        background-color: #50c878;
-    }
-
-    .button-jour:hover {
-        background-color: #3aa75d;
-    }
 
 .modal-overlay {
     position: fixed;
@@ -152,106 +495,536 @@
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 20px;
     z-index: 1000;
 }
 
 .modal-content {
-    background: white;
+    background: #fff;
     padding: 20px;
     border-radius: 8px;
-    max-width: 500px;
+    max-width: 800px;
     width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
     position: relative;
     font-family: 'Roboto', sans-serif;
+    box-sizing: border-box;
 }
 
 .modal-close {
-    position: absolute;
+    position: sticky;
     top: 10px;
     right: 10px;
     background: #dc3545;
-    color: white;
+    color: #fff;
     border: none;
-    border-radius: 4px;
-    padding: 5px 10px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
 }
 
 .copy-paste-section {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .copy-paste-container {
     background: #f9f9f9;
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
-    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+    .copy-paste-container h3 {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 20px;
+    }
 
 .copy-paste-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
 }
 
     .form-group label {
         font-family: 'Roboto', sans-serif;
+        font-size: 16px;
         font-weight: 500;
+        color: #333;
     }
 
-    .form-group select,
-    .form-group input {
-        padding: 8px;
-        border: 1px solid #ccc;
+    .form-group select {
+        padding: 10px;
+        border: 1px solid #ddd;
         border-radius: 4px;
         font-family: 'Roboto', sans-serif;
+        font-size: 16px;
+        background-color: #fff;
+        transition: border-color 0.2s;
     }
+
+        .form-group select:focus {
+            border-color: #1e88e5;
+            outline: none;
+        }
 
 .target-days-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 10px;
+    margin-top: 10px;
 }
 
 .target-day-item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    padding: 8px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
+    .target-day-item:hover {
+        background-color: #f0f0f0;
+    }
+
 .feedback {
-    color: #1e88e5;
-    font-family: 'Roboto', sans-serif;
-    text-align: center;
+    color: #4a90e2;
     margin-top: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    text-align: center;
 }
 
 .recap-table {
     width: 100%;
     border-collapse: collapse;
     font-family: 'Roboto', sans-serif;
+    margin-top: 20px;
 }
 
     .recap-table th,
     .recap-table td {
-        border: 1px solid #ccc;
+        border: 1px solid #ddd;
         padding: 8px;
         text-align: center;
     }
 
     .recap-table th {
-        background: #f0f0f0;
-        font-weight: 500;
+        background-color: #f0f0f0;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
-/* Nouveau style pour les boutons des jours */
+.calendar-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.large-calendar {
+    font-size: 18px;
+    padding: 10px;
+}
+
+    .large-calendar .react-datepicker__day {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        font-size: 16px;
+    }
+
+    .large-calendar .react-datepicker__day--disabled {
+        background-color: #f0f0f0;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
+@media (max-width: 768px) {
+    .step-container {
+        padding: 15px;
+        margin: 10px;
+    }
+
+        .step-container h2 {
+            font-size: 20px;
+        }
+
+        .step-container label {
+            font-size: 16px;
+        }
+
+        .step-container select,
+        .step-container input[type="time"],
+        .step-container input[type="text"],
+        .step-container input[type="date"] {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+    .time-slot-config {
+        gap: 8px;
+        max-width: 350px;
+    }
+
+    .time-picker-container {
+        gap: 5px;
+    }
+
+    .time-value {
+        font-size: 16px;
+        width: 45px;
+    }
+
+    .time-picker-button {
+        padding: 4px;
+        font-size: 12px;
+    }
+
+    .button-base {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .shop-input {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .shop-input-field {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .shop-add-button {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .employee-input {
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .employee-input-field {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .employee-add-button {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .shop-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .employee-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .shop-button {
+        width: 180px;
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .employee-button {
+        width: 180px;
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .button-validate {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .month-select,
+    .week-select {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .saved-weeks {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .saved-week-button {
+        width: 180px;
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .fixed-col {
+        width: 150px;
+        font-size: 14px;
+    }
+
+        .fixed-col.header {
+            text-align: right;
+        }
+
+    .scrollable-col {
+        width: 32px;
+        font-size: 14px;
+    }
+
+    .target-days-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .recap-table {
+        font-size: 12px;
+    }
+
+        .recap-table th,
+        .recap-table td {
+            padding: 6px;
+            font-size: 12px;
+            min-width: 60px;
+        }
+
+    .modal-content {
+        max-width: 95%;
+        max-height: 75vh;
+        padding: 15px;
+    }
+
+    .modal-close {
+        top: 5px;
+        right: 5px;
+    }
+
+    .calendar-input {
+        font-size: 14px;
+    }
+
+    .large-calendar {
+        font-size: 16px;
+    }
+
+        .large-calendar .react-datepicker__day {
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            font-size: 14px;
+        }
+}
+
+@media (max-width: 480px) {
+    .step-container {
+        padding: 10px;
+        margin: 5px;
+    }
+
+        .step-container h2 {
+            font-size: 18px;
+        }
+
+        .step-container label {
+            font-size: 14px;
+        }
+
+        .step-container select,
+        .step-container input[type="time"],
+        .step-container input[type="text"],
+        .step-container input[type="date"] {
+            padding: 6px;
+            font-size: 12px;
+        }
+
+    .time-slot-config {
+        gap: 6px;
+        max-width: 300px;
+    }
+
+    .time-picker-container {
+        gap: 4px;
+    }
+
+    .time-value {
+        font-size: 14px;
+        width: 40px;
+    }
+
+    .time-picker-button {
+        padding: 3px;
+        font-size: 10px;
+    }
+
+    .button-base {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+
+    .shop-input-field {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .shop-add-button {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .employee-input {
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .employee-input-field {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .employee-add-button {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .shop-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .employee-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .shop-button {
+        width: 160px;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .employee-button {
+        width: 160px;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .button-validate {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .month-select,
+    .week-select {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .saved-weeks {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .saved-week-button {
+        width: 160px;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .fixed-col {
+        width: 120px;
+        font-size: 12px;
+    }
+
+        .fixed-col.header {
+            text-align: right;
+        }
+
+    .scrollable-col {
+        width: 28px;
+        font-size: 12px;
+    }
+
+    .target-days-grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
+
+    .recap-table {
+        font-size: 10px;
+    }
+
+        .recap-table th,
+        .recap-table td {
+            padding: 4px;
+            font-size: 10px;
+            min-width: 50px;
+        }
+
+    .modal-content {
+        max-width: 98%;
+        max-height: 70vh;
+        padding: 10px;
+    }
+
+    .modal-close {
+        top: 5px;
+        right: 5px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .calendar-input {
+        font-size: 12px;
+    }
+
+    .large-calendar {
+        font-size: 14px;
+    }
+
+        .large-calendar .react-datepicker__day {
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            font-size: 12px;
+        }
+}
+
 .day-button-content {
     display: flex;
     flex-direction: column;

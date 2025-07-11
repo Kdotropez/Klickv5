@@ -80,9 +80,11 @@ const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
                             className="shop-button"
                             onClick={() => handleSelectShop(shop)}
                             style={{
-                                backgroundColor: localSelectedShop === shop ? '#d6e6ff' : '#f0f0f0',
+                                backgroundColor: localSelectedShop === shop ? '#d4f4e2' : '#4caf50',
                                 color: '#333',
                             }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#a5d6a7' : '#388e3c'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#d4f4e2' : '#4caf50'}
                         >
                             {shop}
                             <FaTimes

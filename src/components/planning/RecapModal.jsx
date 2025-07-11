@@ -1,300 +1,394 @@
-﻿import { format, parse, addMinutes } from 'date-fns';
+﻿import { useState } from 'react';
+import { format, addMinutes, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) => {
-    const isValid = () => {
-        return (
-            config.interval &&
-            config.startTime &&
-            config.endTime &&
-            config.timeSlots &&
-            days.length > 0 &&
-            (type === 'employee' ? data.employee && data.planning : data.planning && selectedEmployees.length > 0)
-        );
-    };
+const RecapModal = ({ type, data, onClose, config, days, selectedEmployees, selectedShop }) => {
+    const [error, setError] = useState('');
 
-    const calculateHours = (slots) => {
-        return (slots.length * config.interval) / 60;
-    };
-
-    const getDailySummary = (employee, day) => {
-        if (!data.planning[day]?.[employee] || data.planning[day][employee].length === 0) {
-            return { arrival: '-', departure1: '-', return1: '-', departure2: '-', return2: '-', end: '-', hours: 0 };
-        }
-
-        const slots = [...data.planning[day][employee]].sort((a, b) => {
-            let aDate = parse(a, 'HH:mm', new Date('2000-01-01'));
-            let bDate = parse(b, 'HH:mm', new Date('2000-01-01'));
-            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
-            const _endTime = parse(config.endTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
-            const isNextDay = _endTime <= _startTime || config.endTime <= '06:00';
-
-            if (isNextDay && a <= '06:00') aDate.setDate(aDate.getDate() + 1);
-            if (isNextDay && b <= '06:00') bDate.setDate(bDate.getDate() + 1);
-            return aDate - bDate;
-        });
-
-        const periods = [];
-        let currentPeriod = [slots[0]];
-        for (let i = 1; i < slots.length; i++) {
-            let prevTime = parse(slots[i - 1], 'HH:mm', new Date('2000-01-01'));
-            let currTime = parse(slots[i], 'HH:mm', new Date('2000-01-01'));
-            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
-            const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
-
-            if (isNextDay && slots[i - 1] <= '06:00') prevTime.setDate(prevTime.getDate() + 1);
-            if (isNextDay && slots[i] <= '06:00') currTime.setDate(currTime.getDate() + 1);
-
-            const diffMinutes = (currTime - prevTime) / (1000 * 60);
-            if (diffMinutes <= config.interval && diffMinutes > 0) {
-                currentPeriod.push(slots[i]);
-            } else {
-                periods.push(currentPeriod);
-                currentPeriod = [slots[i]];
-            }
-        }
-        periods.push(currentPeriod);
-
-        let departures = [];
-        let returns = [];
-        for (let i = 1; i < periods.length; i++) {
-            const prevPeriodEnd = periods[i - 1][periods[i - 1].length - 1];
-            const currPeriodStart = periods[i][0];
-            let prevTime = parse(prevPeriodEnd, 'HH:mm', new Date('2000-01-01'));
-            let currTime = parse(currPeriodStart, 'HH:mm', new Date('2000-01-01'));
-            const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
-            const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
-
-            if (isNextDay && prevPeriodEnd <= '06:00') prevTime.setDate(prevTime.getDate() + 1);
-            if (isNextDay && currPeriodStart <= '06:00') currTime.setDate(currTime.getDate() + 1);
-
-            const diffMinutes = (currTime - prevTime) / (1000 * 60);
-            if (diffMinutes >= 30) {
-                let endTime = parse(prevPeriodEnd, 'HH:mm', new Date('2000-01-01'));
-                if (isNextDay && prevPeriodEnd <= '06:00') endTime.setDate(endTime.getDate() + 1);
-                endTime = addMinutes(endTime, config.interval);
-                departures.push(format(endTime, 'HH:mm'));
-                returns.push(currPeriodStart);
-            }
-        }
-
-        const firstSlot = slots[0];
-        const lastSlot = slots[slots.length - 1];
-        let endDate = parse(lastSlot, 'HH:mm', new Date('2000-01-01'));
-        const _startTime = parse(config.startTime, 'HH:mm', new Date('2000-01-01')); // Renamed to comply with ESLint
-        const isNextDay = config.endTime <= config.startTime || config.endTime <= '06:00';
-
-        if (isNextDay && lastSlot <= '06:00') {
-            endDate.setDate(endDate.getDate() + 1);
-        }
-        const endTimeFormatted = format(addMinutes(endDate, config.interval), 'HH:mm');
-
-        return {
-            arrival: firstSlot,
-            departure1: departures[0] || '-',
-            return1: returns[0] || '-',
-            departure2: departures[1] || '-',
-            return2: returns[1] || '-',
-            end: endTimeFormatted,
-            hours: calculateHours(slots),
-        };
-    };
-
-    const getRestDaysAndHours = (employee) => {
-        const restDays = days
-            .filter((day) => getDailySummary(employee, day).hours === 0)
-            .map((day) => format(new Date(day), 'EEEE', { locale: fr }).toUpperCase());
-        const totalHours = calculateHours(
-            days.reduce((acc, day) => acc.concat(data.planning[day]?.[employee] || []), [])
-        );
-        return restDays.length > 0
-            ? `${employee} : ${totalHours.toFixed(1)} h, Repos : ${restDays.join(', ')}`
-            : `${employee} : ${totalHours.toFixed(1)} h, Repos : aucun`;
-    };
-
-    const applyTableStyles = (doc, startY, isWeekly, selectedEmployees) => {
-        const pageWidth = 297 - 25;
-        return {
-            startY,
-            margin: { left: 10, right: 15, top: 20, bottom: 10 },
-            styles: {
-                font: 'helvetica',
-                fontSize: 9,
-                cellPadding: 2,
-                textColor: [51, 51, 51],
-                lineColor: [221, 221, 221],
-                lineWidth: 0.2,
-                overflow: 'linebreak',
-            },
-            headStyles: {
-                fillColor: [240, 240, 240],
-                textColor: [51, 51, 51],
-                fontStyle: 'bold',
-                halign: 'center',
-            },
-            bodyStyles: {
-                textColor: [51, 51, 51],
-                halign: 'center',
-                fontStyle: 'bold',
-            },
-            columnStyles: isWeekly
-                ? {
-                    0: { cellWidth: pageWidth * 0.12 },
-                    1: { cellWidth: pageWidth * 0.12 },
-                    2: { cellWidth: pageWidth * 0.12 },
-                    3: { cellWidth: pageWidth * 0.10 },
-                    4: { cellWidth: pageWidth * 0.10 },
-                    5: { cellWidth: pageWidth * 0.10 },
-                    6: { cellWidth: pageWidth * 0.10 },
-                    7: { cellWidth: pageWidth * 0.10 },
-                    8: { cellWidth: pageWidth * 0.14 },
-                }
-                : {
-                    0: { cellWidth: pageWidth * 0.20 },
-                    1: { cellWidth: pageWidth * 0.12 },
-                    2: { cellWidth: pageWidth * 0.11 },
-                    3: { cellWidth: pageWidth * 0.11 },
-                    4: { cellWidth: pageWidth * 0.11 },
-                    5: { cellWidth: pageWidth * 0.11 },
-                    6: { cellWidth: pageWidth * 0.11 },
-                    7: { cellWidth: pageWidth * 0.14 },
-                },
-            didParseCell: (data) => {
-                if (data.section === 'body') {
-                    const rowIndex = data.row.index;
-                    const dayIndex = isWeekly ? Math.floor(rowIndex / selectedEmployees.length) : rowIndex;
-                    const pastelColors = [
-                        [230, 240, 250],
-                        [230, 255, 237],
-                        [255, 230, 230],
-                        [208, 240, 250],
-                        [212, 244, 226],
-                        [243, 228, 255],
-                        [255, 243, 224],
-                    ];
-                    if (dayIndex >= 0 && dayIndex < pastelColors.length) {
-                        data.cell.styles.fillColor = pastelColors[dayIndex];
-                        console.log(`Couleur appliquée pour ligne ${rowIndex}, jour ${dayIndex}: ${pastelColors[dayIndex]}`);
-                    } else {
-                        console.warn(`Index de jour invalide: ${dayIndex}, rowIndex: ${rowIndex}, selectedEmployees.length: ${selectedEmployees.length}`);
-                    }
-                }
-            },
-        };
-    };
-
-    const exportPDF = (employee, isWeekly = false) => {
-        try {
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4',
-            });
-            doc.setFont('helvetica');
-            doc.setFontSize(16);
-            const title = employee
-                ? `Récapitulatif pour ${employee} (${calculateHours(
-                    days.reduce((acc, day) => acc.concat(data.planning[day]?.[employee] || []), [])
-                ).toFixed(1)} H)`
-                : 'Récapitulatif hebdomadaire';
-            doc.text(title, 148.5, 15, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text(
-                `semaine du ${format(new Date(days[0]), 'EEEE d MMMM', { locale: fr })} au ${format(
-                    new Date(days[days.length - 1]),
-                    'EEEE d MMMM',
-                    { locale: fr }
-                )}`,
-                148.5,
-                22,
-                { align: 'center' }
-            );
-            const tableData = isWeekly
-                ? days.flatMap((day) =>
-                    selectedEmployees.map((employee) => {
-                        const summary = getDailySummary(employee, day);
-                        return [
-                            format(new Date(day), 'EEEE', { locale: fr }).toUpperCase(),
-                            employee,
-                            summary.arrival,
-                            summary.departure1,
-                            summary.return1,
-                            summary.departure2,
-                            summary.return2,
-                            summary.end,
-                            `${summary.hours.toFixed(1)} h`,
-                        ];
-                    })
-                )
-                : days.map((day) => {
-                    const summary = getDailySummary(employee, day);
-                    return [
-                        format(new Date(day), 'EEEE', { locale: fr }).toUpperCase(),
-                        summary.arrival,
-                        summary.departure1,
-                        summary.return1,
-                        summary.departure2,
-                        summary.return2,
-                        summary.end,
-                        `${summary.hours.toFixed(1)} h`,
-                    ];
-                });
-            autoTable(doc, {
-                head: isWeekly
-                    ? [['Jour', 'Employé', 'Arrivée', 'Sortie 1', 'Retour 1', 'Sortie 2', 'Retour 2', 'Fin', 'Heures']]
-                    : [['Jour', 'Arrivée', 'Sortie 1', 'Retour 1', 'Sortie 2', 'Retour 2', 'Fin', 'Heures']],
-                body: tableData,
-                ...applyTableStyles(doc, 30, isWeekly, selectedEmployees),
-            });
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(51, 51, 51);
-            const tableHeight = doc.lastAutoTable.finalY;
-            let yOffset = tableHeight + 5;
-            if (isWeekly) {
-                selectedEmployees.forEach((emp) => {
-                    const restDaysText = getRestDaysAndHours(emp);
-                    doc.text(restDaysText, 10, yOffset);
-                    yOffset += 5;
-                });
-            } else {
-                const restDaysText = getRestDaysAndHours(employee);
-                doc.text(restDaysText, 10, yOffset);
-            }
-            doc.setFontSize(8);
-            doc.setTextColor(153, 153, 153);
-            doc.text('Klick-Planning - copyright © Nicolas Lefevre', 10, doc.internal.pageSize.height - 10);
-            doc.save(isWeekly ? 'weekly_recap.pdf' : `recap_${employee}.pdf`);
-        } catch (error) {
-            console.error('Erreur détaillée lors de l\'exportation PDF:', {
-                message: error.message,
-                stack: error.stack,
-                data: { employee, isWeekly },
-            });
-            alert('Une erreur s’est produite lors de l’exportation du PDF. Veuillez vérifier la console (F12 > Console) pour plus de détails.');
-        }
-    };
-
-    if (!isValid()) {
+    // Vérifier que les données nécessaires sont disponibles
+    if (!data || !config || !days || !selectedEmployees) {
+        console.error('RecapModal: Données manquantes', { data, config, days, selectedEmployees, selectedShop });
+        setError('Erreur : Données manquantes pour afficher le récapitulatif.');
         return (
             <div className="modal-overlay">
                 <div className="modal-content">
                     <button className="modal-close" onClick={onClose}>
                         ✕
                     </button>
-                    <h2>Erreur</h2>
-                    <p>Données invalides. Veuillez vérifier les paramètres.</p>
-                    <div className="button-group">
-                        <Button onClick={onClose} className="button-secondary">Fermer</Button>
-                    </div>
+                    <h3>Erreur</h3>
+                    <p>{error}</p>
                 </div>
             </div>
         );
     }
+
+    // Couleurs pastel pour chaque jour (7 jours)
+    const dayColors = [
+        '#e6f0fa', // Lundi
+        '#e6ffed', // Mardi
+        '#ffe6e6', // Mercredi
+        '#d6e6ff', // Jeudi
+        '#d4f4e2', // Vendredi
+        '#f0e6fa', // Samedi
+        '#fffde6', // Dimanche
+    ];
+
+    // Fonction pour calculer les périodes continues (arrivée, sortie(s), retour(s), fin)
+    const getEmployeeSchedule = (employee, day) => {
+        if (!data.planning || !config?.interval) {
+            console.warn(`getEmployeeSchedule: Données manquantes pour ${employee} le ${format(day, 'yyyy-MM-dd')}`);
+            return { arrival: '', exit1: '', return1: '', exit2: '', return2: '', end: '', hours: 0, hasSecondPause: false };
+        }
+
+        const dateKey = format(day, 'yyyy-MM-dd');
+        const slots = data.planning[dateKey]?.[employee] || [];
+        if (slots.length === 0) {
+            return { arrival: '', exit1: '', return1: '', exit2: '', return2: '', end: '', hours: 0, hasSecondPause: false };
+        }
+
+        // Trier les créneaux pour garantir un ordre chronologique
+        const sortedSlots = slots.sort((a, b) => {
+            const aTime = a >= '00:00' && a < '06:00' ? `24:${a.split(':')[1]}` : a;
+            const bTime = b >= '00:00' && b < '06:00' ? `24:${b.split(':')[1]}` : b;
+            return aTime.localeCompare(bTime);
+        });
+
+        let arrival = sortedSlots[0];
+        let exit1 = '';
+        let return1 = '';
+        let exit2 = '';
+        let return2 = '';
+        let hasSecondPause = false;
+        let hours = (sortedSlots.length * config.interval) / 60;
+
+        // Déterminer les groupes de créneaux continus
+        const groups = [];
+        let currentGroup = [sortedSlots[0]];
+        for (let i = 1; i < sortedSlots.length; i++) {
+            let currentTime = new Date(`2025-01-01T${sortedSlots[i]}`);
+            let prevTime = new Date(`2025-01-01T${sortedSlots[i - 1]}`);
+            if (sortedSlots[i] >= '00:00' && sortedSlots[i] < '06:00') {
+                currentTime = addDays(currentTime, 1);
+            }
+            if (sortedSlots[i - 1] >= '00:00' && sortedSlots[i - 1] < '06:00') {
+                prevTime = addDays(prevTime, 1);
+            }
+            const diffMinutes = (currentTime - prevTime) / 60000;
+            if (diffMinutes > config.interval) {
+                groups.push(currentGroup);
+                currentGroup = [sortedSlots[i]];
+            } else {
+                currentGroup.push(sortedSlots[i]);
+            }
+        }
+        groups.push(currentGroup);
+
+        // Assigner les valeurs en fonction des groupes
+        if (groups.length === 1) {
+            // Pas de pause
+            exit1 = format(addMinutes(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), config.interval), 'HH:mm');
+            if (groups[0][groups[0].length - 1] >= '00:00' && groups[0][groups[0].length - 1] < '06:00') {
+                exit1 = format(addMinutes(addDays(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), 1), config.interval), 'HH:mm');
+            }
+        } else if (groups.length === 2) {
+            // Une pause
+            exit1 = format(addMinutes(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), config.interval), 'HH:mm');
+            return1 = groups[1][0];
+            if (groups[0][groups[0].length - 1] >= '00:00' && groups[0][groups[0].length - 1] < '06:00') {
+                exit1 = format(addMinutes(addDays(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), 1), config.interval), 'HH:mm');
+            }
+        } else if (groups.length >= 3) {
+            // Deux pauses
+            exit1 = format(addMinutes(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), config.interval), 'HH:mm');
+            return1 = groups[1][0];
+            exit2 = format(addMinutes(new Date(`2025-01-01T${groups[1][groups[1].length - 1]}`), config.interval), 'HH:mm');
+            return2 = groups[2][0];
+            hasSecondPause = true;
+            if (groups[0][groups[0].length - 1] >= '00:00' && groups[0][groups[0].length - 1] < '06:00') {
+                exit1 = format(addMinutes(addDays(new Date(`2025-01-01T${groups[0][groups[0].length - 1]}`), 1), config.interval), 'HH:mm');
+            }
+            if (groups[1][groups[1].length - 1] >= '00:00' && groups[1][groups[1].length - 1] < '06:00') {
+                exit2 = format(addMinutes(addDays(new Date(`2025-01-01T${groups[1][groups[1].length - 1]}`), 1), config.interval), 'HH:mm');
+            }
+        }
+
+        // Définir la fin comme la fin du dernier créneau
+        let endTime = new Date(`2025-01-01T${sortedSlots[sortedSlots.length - 1]}`);
+        if (sortedSlots[sortedSlots.length - 1] >= '00:00' && sortedSlots[sortedSlots.length - 1] < '06:00') {
+            endTime = addDays(endTime, 1);
+        }
+        const end = format(addMinutes(endTime, config.interval), 'HH:mm');
+
+        const schedule = { arrival, exit1, return1, exit2, return2, end, hours, hasSecondPause };
+        console.log(`getEmployeeSchedule: employee=${employee}, day=${dateKey}, schedule=${JSON.stringify(schedule)}`);
+        return schedule;
+    };
+
+    // Générer les données pour le récapitulatif individuel
+    const getIndividualRecap = (employee) => {
+        return days.map((day) => {
+            const schedule = getEmployeeSchedule(employee, day);
+            return {
+                day: format(day, 'EEEE', { locale: fr }), // Simplifier à "lundi"
+                arrival: schedule.arrival,
+                exit1: schedule.exit1,
+                return1: schedule.return1,
+                exit2: schedule.exit2,
+                return2: schedule.return2,
+                end: schedule.end,
+                hours: schedule.hours.toFixed(1),
+                hasSecondPause: schedule.hasSecondPause,
+            };
+        });
+    };
+
+    // Générer les données pour le récapitulatif hebdomadaire
+    const getWeeklyRecap = () => {
+        const recap = [];
+        selectedEmployees.forEach((employee) => {
+            days.forEach((day) => {
+                const schedule = getEmployeeSchedule(employee, day);
+                if (schedule.hours > 0) {
+                    recap.push({
+                        day: format(day, 'EEEE', { locale: fr }), // Simplifier à "lundi"
+                        employee,
+                        arrival: schedule.arrival,
+                        exit1: schedule.exit1,
+                        return1: schedule.return1,
+                        exit2: schedule.exit2,
+                        return2: schedule.return2,
+                        end: schedule.end,
+                        hours: schedule.hours.toFixed(1),
+                        hasSecondPause: schedule.hasSecondPause,
+                    });
+                }
+            });
+        });
+        console.log('getWeeklyRecap:', JSON.stringify(recap));
+        return recap;
+    };
+
+    // Générer les données pour le planning individuel
+    const getIndividualPlanning = (employee) => {
+        return days.map((day) => {
+            const dateKey = format(day, 'yyyy-MM-dd');
+            const slots = (data.planning[dateKey]?.[employee] || []).sort((a, b) => {
+                const aTime = a >= '00:00' && a < '06:00' ? `24:${a.split(':')[1]}` : a;
+                const bTime = b >= '00:00' && b < '06:00' ? `24:${b.split(':')[1]}` : b;
+                return aTime.localeCompare(bTime);
+            });
+            return {
+                day: format(day, 'EEEE', { locale: fr }), // Simplifier à "lundi"
+                slots: slots.length > 0 ? slots.map((slot) => {
+                    let slotTime = new Date(`2025-01-01T${slot}`);
+                    if (slot >= '00:00' && slot < '06:00') {
+                        slotTime = addDays(slotTime, 1);
+                    }
+                    return `${slot}-${format(addMinutes(slotTime, config.interval), 'HH:mm')}`;
+                }).join(', ') : '-',
+            };
+        });
+    };
+
+    // Générer les données pour le planning de la boutique
+    const getShopPlanning = () => {
+        const planning = [];
+        selectedEmployees.forEach((employee) => {
+            days.forEach((day) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const slots = (data.planning[dateKey]?.[employee] || []).sort((a, b) => {
+                    const aTime = a >= '00:00' && a < '06:00' ? `24:${a.split(':')[1]}` : a;
+                    const bTime = b >= '00:00' && b < '06:00' ? `24:${b.split(':')[1]}` : b;
+                    return aTime.localeCompare(bTime);
+                });
+                if (slots.length > 0) {
+                    planning.push({
+                        day: format(day, 'EEEE', { locale: fr }), // Simplifier à "lundi"
+                        employee,
+                        slots: slots.map((slot) => {
+                            let slotTime = new Date(`2025-01-01T${slot}`);
+                            if (slot >= '00:00' && slot < '06:00') {
+                                slotTime = addDays(slotTime, 1);
+                            }
+                            return `${slot}-${format(addMinutes(slotTime, config.interval), 'HH:mm')}`;
+                        }).join(', '),
+                    });
+                }
+            });
+        });
+        console.log('getShopPlanning:', JSON.stringify(planning));
+        return planning;
+    };
+
+    // Fonction pour générer le PDF
+    const handleExportPDF = () => {
+        try {
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 10;
+            let yOffset = 20;
+
+            // Déterminer si des données contiennent deux pauses
+            const hasSecondPause = type === 'employee'
+                ? getIndividualRecap(data.employee).some(row => row.hasSecondPause)
+                : getWeeklyRecap().some(row => row.hasSecondPause);
+
+            // Titre du PDF
+            doc.setFont('times', 'normal');
+            doc.setFontSize(16);
+            const title = type === 'employee' ? `Récapitulatif pour ${data.employee}` : 'Récapitulatif semaine';
+            doc.text(title, pageWidth / 2, yOffset, { align: 'center' });
+            yOffset += 10;
+
+            // Afficher la semaine
+            const weekText = `Semaine du ${format(days[0], 'EEEE d MMMM', { locale: fr })} au ${format(days[6], 'EEEE d MMMM', { locale: fr })}`;
+            doc.setFontSize(16);
+            doc.text(weekText, pageWidth / 2, yOffset, { align: 'center' });
+            yOffset += 10;
+
+            // Générer le tableau selon le type
+            if (type === 'employee') {
+                // Récapitulatif individuel
+                const head = hasSecondPause
+                    ? [['Jour', 'Arrivée', 'Sortie', 'Retour', 'Sortie', 'Retour', 'Fin', 'Heures effectives']]
+                    : [['Jour', 'Arrivée', 'Sortie', 'Retour', 'Fin', 'Heures effectives']];
+                const body = getIndividualRecap(data.employee).map((row) => hasSecondPause
+                    ? [row.day, row.arrival || '-', row.exit1 || '-', row.return1 || '-', row.exit2 || '-', row.return2 || '-', row.end || '-', `${row.hours} h`]
+                    : [row.day, row.arrival || '-', row.exit1 || '-', row.return1 || '-', row.end || '-', `${row.hours} h`]);
+                console.log('Individual recap body:', JSON.stringify(body));
+                if (body.length === 0) {
+                    throw new Error('Aucune donnée valide pour le récapitulatif individuel.');
+                }
+                doc.autoTable({
+                    startY: yOffset,
+                    head,
+                    body,
+                    theme: 'striped',
+                    headStyles: { fillColor: '#f0f0f0', textColor: '#333' },
+                    bodyStyles: {
+                        fillColor: (rowIndex) => dayColors[rowIndex % dayColors.length] || '#fff'
+                    },
+                    styles: { font: 'times', fontSize: 10 },
+                    margin: { top: margin, left: margin, right: margin },
+                });
+                yOffset = doc.lastAutoTable.finalY + 10;
+
+                // Planning individuel
+                doc.addPage();
+                yOffset = 20;
+                doc.text(`Planning pour ${data.employee}`, pageWidth / 2, yOffset, { align: 'center' });
+                yOffset += 10;
+                doc.text(weekText, pageWidth / 2, yOffset, { align: 'center' });
+                yOffset += 10;
+                const planningBody = getIndividualPlanning(data.employee).map((row) => [
+                    row.day,
+                    row.slots,
+                ]);
+                console.log('Individual planning body:', JSON.stringify(planningBody));
+                if (planningBody.length === 0) {
+                    throw new Error('Aucune donnée valide pour le planning individuel.');
+                }
+                doc.autoTable({
+                    startY: yOffset,
+                    head: [['Jour', 'Tranches horaires']],
+                    body: planningBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: '#f0f0f0', textColor: '#333' },
+                    bodyStyles: {
+                        fillColor: (rowIndex) => dayColors[rowIndex % dayColors.length] || '#fff'
+                    },
+                    styles: { font: 'times', fontSize: 10 },
+                    margin: { top: margin, left: margin, right: margin },
+                });
+            } else {
+                // Récapitulatif hebdomadaire
+                const recapData = getWeeklyRecap();
+                console.log('Weekly recap body:', JSON.stringify(recapData));
+                if (!recapData || recapData.length === 0) {
+                    throw new Error('Aucune donnée valide pour le récapitulatif hebdomadaire.');
+                }
+                const head = hasSecondPause
+                    ? [['Jour', 'Employé', 'Arrivée', 'Sortie', 'Retour', 'Sortie', 'Retour', 'Fin', 'Heures effectives']]
+                    : [['Jour', 'Employé', 'Arrivée', 'Sortie', 'Retour', 'Fin', 'Heures effectives']];
+                const body = recapData.map((row) => hasSecondPause
+                    ? [row.day, row.employee, row.arrival || '-', row.exit1 || '-', row.return1 || '-', row.exit2 || '-', row.return2 || '-', row.end || '-', `${row.hours} h`]
+                    : [row.day, row.employee, row.arrival || '-', row.exit1 || '-', row.return1 || '-', row.end || '-', `${row.hours} h`]);
+                doc.autoTable({
+                    startY: yOffset,
+                    head,
+                    body,
+                    theme: 'striped',
+                    headStyles: { fillColor: '#f0f0f0', textColor: '#333' },
+                    bodyStyles: {
+                        fillColor: (rowIndex) => {
+                            if (!recapData[rowIndex]) return '#fff';
+                            const dayIndex = days.findIndex((d) => format(d, 'EEEE', { locale: fr }) === recapData[rowIndex].day);
+                            return dayColors[dayIndex >= 0 ? dayIndex : 0] || '#fff';
+                        }
+                    },
+                    styles: { font: 'times', fontSize: 10 },
+                    margin: { top: margin, left: margin, right: margin },
+                });
+                yOffset = doc.lastAutoTable.finalY + 10;
+
+                // Planning de la boutique
+                doc.addPage();
+                yOffset = 20;
+                doc.text(`Planning pour ${selectedShop || 'Boutique'}`, pageWidth / 2, yOffset, { align: 'center' });
+                yOffset += 10;
+                doc.text(weekText, pageWidth / 2, yOffset, { align: 'center' });
+                yOffset += 10;
+                const shopPlanningBody = getShopPlanning();
+                console.log('Shop planning body:', JSON.stringify(shopPlanningBody));
+                if (!shopPlanningBody || shopPlanningBody.length === 0) {
+                    throw new Error('Aucune donnée valide pour le planning de la boutique.');
+                }
+                doc.autoTable({
+                    startY: yOffset,
+                    head: [['Jour', 'Employé', 'Tranches horaires']],
+                    body: shopPlanningBody.map((row) => [
+                        row.day,
+                        row.employee,
+                        row.slots,
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: '#f0f0f0', textColor: '#333' },
+                    bodyStyles: {
+                        fillColor: (rowIndex) => {
+                            if (!shopPlanningBody[rowIndex]) return '#fff';
+                            const dayIndex = days.findIndex((d) => format(d, 'EEEE', { locale: fr }) === shopPlanningBody[rowIndex].day);
+                            return dayColors[dayIndex >= 0 ? dayIndex : 0] || '#fff';
+                        }
+                    },
+                    styles: { font: 'times', fontSize: 10 },
+                    margin: { top: margin, left: margin, right: margin },
+                });
+            }
+
+            // Ajouter le copyright
+            doc.setFontSize(8);
+            doc.text('© Nicolas Lefevre 2025', pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+            // Télécharger le PDF
+            const fileName = type === 'employee' ? `recap_${data.employee}_${format(new Date(days[0]), 'yyyy-MM-dd')}.pdf` : `recap_weekly_${selectedShop || 'Boutique'}_${format(new Date(days[0]), 'yyyy-MM-dd')}.pdf`;
+            doc.save(fileName);
+        } catch (error) {
+            console.error('Erreur lors de l’exportation PDF:', error);
+            alert('Erreur lors de la génération du PDF. Veuillez vérifier la console pour plus de détails.');
+        }
+    };
+
+    // Déterminer si des données contiennent deux pauses pour l’affichage de la modale
+    const hasSecondPause = type === 'employee'
+        ? getIndividualRecap(data.employee).some(row => row.hasSecondPause)
+        : getWeeklyRecap().some(row => row.hasSecondPause);
+
+    const recapData = type === 'employee' ? getIndividualRecap(data.employee) : getWeeklyRecap();
 
     return (
         <div className="modal-overlay">
@@ -302,81 +396,53 @@ const RecapModal = ({ type, data, onClose, config, days, selectedEmployees }) =>
                 <button className="modal-close" onClick={onClose}>
                     ✕
                 </button>
-                <h2 className="modal-title">
-                    {type === 'employee'
-                        ? `Récapitulatif pour ${data.employee} (${calculateHours(
-                            days.reduce((acc, day) => acc.concat(data.planning[day]?.[data.employee] || []), [])
-                        ).toFixed(1)} H)`
-                        : 'Récapitulatif hebdomadaire'}
-                </h2>
-                {type === 'employee' && (
-                    <p className="modal-period">
-                        semaine du {format(new Date(days[0]), 'EEEE d MMMM', { locale: fr })} au{' '}
-                        {format(new Date(days[days.length - 1]), 'EEEE d MMMM', { locale: fr })}
-                    </p>
-                )}
-                <div className="table-container">
+                <h3 style={{ textAlign: 'center', fontSize: '20px' }}>{type === 'employee' ? `Récapitulatif pour ${data.employee}` : 'Récapitulatif semaine'}</h3>
+                <p style={{ textAlign: 'center', fontSize: '18px', fontFamily: 'Roboto, sans-serif', margin: '10px 0' }}>
+                    Semaine du {format(days[0], 'EEEE d MMMM', { locale: fr })} au {format(days[6], 'EEEE d MMMM', { locale: fr })}
+                </p>
+                {recapData.length === 0 ? (
+                    <p>Aucune donnée disponible pour ce récapitulatif.</p>
+                ) : (
                     <table className="recap-table">
                         <thead>
                             <tr>
                                 <th>Jour</th>
                                 {type === 'weekly' && <th>Employé</th>}
                                 <th>Arrivée</th>
-                                <th>Sortie 1</th>
-                                <th>Retour 1</th>
-                                <th>Sortie 2</th>
-                                <th>Retour 2</th>
+                                <th>Sortie</th>
+                                <th>Retour</th>
+                                {hasSecondPause && <th>Sortie</th>}
+                                {hasSecondPause && <th>Retour</th>}
                                 <th>Fin</th>
-                                <th>Heures</th>
+                                <th>Heures effectives</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {type === 'employee'
-                                ? days.map((day) => {
-                                    const summary = getDailySummary(data.employee, day);
-                                    return (
-                                        <tr key={day}>
-                                            <td>{format(new Date(day), 'EEEE', { locale: fr })}</td>
-                                            <td>{summary.arrival}</td>
-                                            <td>{summary.departure1}</td>
-                                            <td>{summary.return1}</td>
-                                            <td>{summary.departure2}</td>
-                                            <td>{summary.return2}</td>
-                                            <td>{summary.end}</td>
-                                            <td>{summary.hours.toFixed(1)} h</td>
-                                        </tr>
-                                    );
-                                })
-                                : days.flatMap((day) =>
-                                    selectedEmployees.map((employee) => {
-                                        const summary = getDailySummary(employee, day);
-                                        return (
-                                            <tr key={`${day}-${employee}`}>
-                                                <td>{format(new Date(day), 'EEEE', { locale: fr })}</td>
-                                                <td>{employee}</td>
-                                                <td>{summary.arrival}</td>
-                                                <td>{summary.departure1}</td>
-                                                <td>{summary.return1}</td>
-                                                <td>{summary.departure2}</td>
-                                                <td>{summary.return2}</td>
-                                                <td>{summary.end}</td>
-                                                <td>{summary.hours.toFixed(1)} h</td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
+                            {recapData.map((row, index) => (
+                                <tr key={index}>
+                                    <td>{row.day}</td>
+                                    {type === 'weekly' && <td>{row.employee}</td>}
+                                    <td>{row.arrival || '-'}</td>
+                                    <td>{row.exit1 || '-'}</td>
+                                    <td>{row.return1 || '-'}</td>
+                                    {hasSecondPause && <td>{row.exit2 || '-'}</td>}
+                                    {hasSecondPause && <td>{row.return2 || '-'}</td>}
+                                    <td>{row.end || '-'}</td>
+                                    <td>{row.hours} h</td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
-                </div>
+                )}
                 <div className="button-group">
-                    {type === 'employee' && (
-                        <Button onClick={() => exportPDF(data.employee)} className="button-primary">Exporter PDF</Button>
-                    )}
-                    {type === 'weekly' && (
-                        <Button onClick={() => exportPDF(null, true)} className="button-primary">Exporter Récapitulatif Semaine PDF</Button>
-                    )}
-                    <Button onClick={onClose} className="button-secondary">Fermer</Button>
+                    <Button className="button-base button-primary" onClick={handleExportPDF}>
+                        Exporter en PDF
+                    </Button>
+                    <Button className="button-base button-retour" onClick={onClose}>
+                        Fermer
+                    </Button>
                 </div>
+                <footer>© Nicolas Lefevre 2025</footer>
             </div>
         </div>
     );

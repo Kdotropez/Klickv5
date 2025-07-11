@@ -197,13 +197,6 @@
             transform: scale(1.05);
         }
 
-footer {
-    margin-top: 20px;
-    font-size: 14px;
-    color: #999;
-    text-align: center;
-}
-
 .shop-input {
     display: flex;
     gap: 8px;
@@ -212,18 +205,18 @@ footer {
 }
 
 .shop-input-field {
-    padding: 6px;
+    padding: 8px;
     border-radius: 4px;
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
     border: 1px solid #ccc;
-    width: 180px;
+    width: 200px;
 }
 
 .shop-add-button {
-    padding: 6px;
+    padding: 8px;
     font-size: 14px;
-    width: 180px;
+    width: 200px;
 }
 
 .shop-list {
@@ -253,8 +246,7 @@ footer {
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
-    width: 100%;
-    max-width: 180px;
+    width: 200px;
 }
 
     .shop-button:hover {
@@ -580,15 +572,15 @@ footer {
     }
 
     .shop-input-field {
-        width: 160px;
-        padding: 5px;
-        font-size: 12px;
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
     }
 
     .shop-add-button {
-        width: 160px;
-        padding: 5px;
-        font-size: 12px;
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
     }
 
     .shop-list {
@@ -597,7 +589,7 @@ footer {
     }
 
     .shop-button {
-        max-width: 160px;
+        width: 180px;
         padding: 6px 10px;
         font-size: 13px;
     }
@@ -705,15 +697,15 @@ footer {
     }
 
     .shop-input-field {
-        width: 140px;
-        padding: 4px;
-        font-size: 11px;
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
     }
 
     .shop-add-button {
-        width: 140px;
-        padding: 4px;
-        font-size: 11px;
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
     }
 
     .shop-list {
@@ -722,7 +714,7 @@ footer {
     }
 
     .shop-button {
-        max-width: 140px;
+        width: 160px;
         padding: 5px 8px;
         font-size: 12px;
     }

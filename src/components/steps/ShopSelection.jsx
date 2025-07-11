@@ -119,9 +119,6 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                     Réinitialiser
                 </Button>
             </div>
-            <footer style={{ textAlign: 'center', marginTop: '15px', fontFamily: 'Roboto, sans-serif', fontSize: '12px' }}>
-                © Nicolas Lefèvre 2025
-            </footer>
         </div>
     );
 };

@@ -1,195 +1,279 @@
-﻿import { useState } from 'react';
-import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
-import { saveToLocalStorage } from '../../utils/localStorage';
+﻿import { useState, useEffect } from 'react';
+import { format, addMinutes } from 'date-fns';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
 const TimeSlotConfig = ({ onNext, onReset, config }) => {
     const [interval, setInterval] = useState(config?.interval || 30);
-    const [startHour, setStartHour] = useState(config?.startTime ? parseInt(config.startTime.split(':')[0]) : 9);
-    const [startMinute, setStartMinute] = useState(config?.startTime ? parseInt(config.startTime.split(':')[1]) : 0);
-    const [endHour, setEndHour] = useState(config?.endTime ? parseInt(config.endTime.split(':')[0]) : 1);
-    const [endMinute, setEndMinute] = useState(config?.endTime ? parseInt(config.endTime.split(':')[1]) : 0);
-    const [error, setError] = useState('');
+    const [startTimeCustom, setStartTimeCustom] = useState('');
+    const [endTimeCustom, setEndTimeCustom] = useState('');
+    const [startTimeOption, setStartTimeOption] = useState(config?.startTime || '10:00');
+    const [endTimeOption, setEndTimeOption] = useState(config?.endTime || '23:00');
+    const [errors, setErrors] = useState({ interval: '', startTime: '', endTime: '' });
 
-    const generateTimeSlots = (start, end, interval) => {
-        const slots = [];
-        const startMinutes = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
-        let endMinutes = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
-        if (endMinutes <= startMinutes) {
-            endMinutes += 24 * 60; // Ajouter 24 heures si l’heure de fin est le lendemain
+    const startTimeOptions = ['09:00', '09:30', '10:00', 'custom'];
+    const endTimeOptions = ['19:00', '20:00', '22:00', '23:00', '24:00', '01:00', '02:00', 'custom'];
+
+    const isValidTimeFormat = (time) => time && /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+
+    useEffect(() => {
+        const newErrors = { interval: '', startTime: '', endTime: '' };
+        const effectiveStartTime = startTimeOption === 'custom' ? startTimeCustom : startTimeOption;
+        const effectiveEndTime = endTimeOption === 'custom' ? endTimeCustom : endTimeOption;
+
+        if (startTimeOption === 'custom' && !isValidTimeFormat(effectiveStartTime)) {
+            newErrors.startTime = 'Heure de début personnalisée invalide (HH:mm).';
+        } else if (!isValidTimeFormat(effectiveStartTime)) {
+            newErrors.startTime = 'Heure de début invalide (HH:mm).';
         }
-
-        let currentMinutes = startMinutes;
-        while (currentMinutes < endMinutes) {
-            const startHour = Math.floor(currentMinutes / 60) % 24;
-            const startMinute = currentMinutes % 60;
-            const startSlot = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-            currentMinutes += interval;
-            const endHour = Math.floor(currentMinutes / 60) % 24;
-            const endMinute = currentMinutes % 60;
-            const endSlot = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-            slots.push({ start: startSlot, end: endSlot });
+        if (endTimeOption === 'custom' && !isValidTimeFormat(effectiveEndTime)) {
+            newErrors.endTime = 'Heure de fin personnalisée invalide (HH:mm).';
+        } else if (!isValidTimeFormat(effectiveEndTime)) {
+            newErrors.endTime = 'Heure de fin invalide (HH:mm).';
         }
-        return slots;
-    };
-
-    const handleIncrement = (setter, type, maxValue) => {
-        setter((prev) => (prev >= maxValue ? 0 : prev + (type === 'minute' ? 15 : 1)));
-    };
-
-    const handleDecrement = (setter, type, minValue, maxValue) => {
-        setter((prev) => (prev <= minValue ? maxValue : prev - (type === 'minute' ? 15 : 1)));
-    };
-
-    const handleSubmit = () => {
-        const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-        const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-        console.log(`handleSubmit: startTime=${startTime}, endTime=${endTime}, interval=${interval}`);
-
-        if (!startTime || !endTime) {
-            setError('Veuillez sélectionner une heure de début et de fin.');
-            console.error('Erreur: startTime ou endTime manquant');
-            return;
+        if (isValidTimeFormat(effectiveStartTime) && isValidTimeFormat(effectiveEndTime)) {
+            const start = new Date(`2025-01-01T${effectiveStartTime}`);
+            let end = new Date(`2025-01-01T${effectiveEndTime}`);
+            if (effectiveEndTime <= '06:00') end = new Date(`2025-01-02T${effectiveEndTime}`);
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                newErrors.startTime = 'Heure de début invalide.';
+                newErrors.endTime = 'Heure de fin invalide.';
+            } else if (end <= start) {
+                newErrors.endTime = 'L’heure de fin doit être postérieure à l’heure de début.';
+            }
         }
-
-        // Convertir en minutes pour comparaison
-        const startMinutes = startHour * 60 + startMinute;
-        let endMinutes = endHour * 60 + endMinute;
-        const isNextDay = endTime <= startTime || endTime <= '06:00';
-
-        console.log(`startMinutes=${startMinutes}, endMinutes=${endMinutes}, isNextDay=${isNextDay}`);
-
-        if (isNextDay) {
-            endMinutes += 24 * 60; // Ajouter 24 heures si l’heure de fin est le lendemain
-        }
-
-        if (endMinutes <= startMinutes) {
-            setError('L’heure de fin doit être postérieure à l’heure de début.');
-            console.error(`Erreur: endMinutes (${endMinutes}) <= startMinutes (${startMinutes})`);
-            return;
-        }
-
-        if (isNextDay && endTime > '06:00') {
-            setError('L’heure de fin ne peut pas dépasser 06:00 le lendemain.');
-            console.error(`Erreur: endTime (${endTime}) dépasse 06:00 le lendemain`);
-            return;
-        }
-
         if (![15, 30, 60].includes(Number(interval))) {
-            setError('L’intervalle doit être 15, 30 ou 60 minutes.');
-            console.error(`Erreur: intervalle invalide (${interval})`);
+            newErrors.interval = 'Intervalle doit être 15, 30 ou 60 minutes.';
+        }
+        setErrors(newErrors);
+        console.log('Validation errors:', newErrors);
+        console.log('Effective times:', { effectiveStartTime, effectiveEndTime });
+    }, [interval, startTimeOption, endTimeOption, startTimeCustom, endTimeCustom]);
+
+    const validateAndSave = () => {
+        console.log('validateAndSave:', { interval, startTimeOption, startTimeCustom, endTimeOption, endTimeCustom });
+        if (errors.interval || errors.startTime || errors.endTime) {
+            alert(`Erreur :\n${Object.values(errors).filter(e => e).join('\n')}`);
             return;
         }
 
-        const timeSlots = generateTimeSlots(startTime, endTime, interval);
-        console.log('timeSlots générés:', timeSlots);
-        const configData = { interval: Number(interval), startTime, endTime, timeSlots };
-        saveToLocalStorage('timeSlotConfig', configData);
-        onNext(configData);
+        const effectiveStartTime = startTimeOption === 'custom' ? startTimeCustom : startTimeOption;
+        const effectiveEndTime = endTimeOption === 'custom' ? endTimeCustom : endTimeOption;
+
+        try {
+            if (!isValidTimeFormat(effectiveStartTime) || !isValidTimeFormat(effectiveEndTime)) {
+                alert('Erreur : Format de date invalide (HH:mm attendu).');
+                return;
+            }
+
+            const start = new Date(`2025-01-01T${effectiveStartTime}`);
+            let end = new Date(`2025-01-01T${effectiveEndTime}`);
+            if (effectiveEndTime <= '06:00') end = new Date(`2025-01-02T${effectiveEndTime}`);
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                alert('Erreur : Format de date invalide.');
+                return;
+            }
+            if (end <= start) {
+                alert('Erreur : L’heure de fin doit être postérieure à l’heure de début.');
+                return;
+            }
+
+            const timeSlots = [];
+            let currentTime = start;
+            while (currentTime < end) {
+                timeSlots.push(format(currentTime, 'HH:mm'));
+                currentTime = addMinutes(currentTime, Number(interval));
+            }
+
+            const configData = { interval: Number(interval), startTime: effectiveStartTime, endTime: effectiveEndTime, timeSlots };
+            localStorage.setItem('timeSlotConfig', JSON.stringify(configData));
+            onNext(configData);
+        } catch (error) {
+            console.error('Error in validateAndSave:', error);
+            alert('Erreur lors de la validation : Problème inattendu.');
+        }
     };
 
-    const handleReset = () => {
+    const reset = () => {
         setInterval(30);
-        setStartHour(9);
-        setStartMinute(0);
-        setEndHour(1);
-        setEndMinute(0);
-        setError('');
-        saveToLocalStorage('timeSlotConfig', {});
+        setStartTimeOption('10:00');
+        setEndTimeOption('23:00');
+        setStartTimeCustom('');
+        setEndTimeCustom('');
+        setErrors({ interval: '', startTime: '', endTime: '' });
+        localStorage.removeItem('timeSlotConfig');
         onReset();
     };
 
     return (
-        <div className="step-container">
-            <h2>Configuration des tranches horaires</h2>
-            {error && <p className="error">{error}</p>}
-            <div className="time-slot-config">
-                <label className="time-slot-label">
-                    Intervalle (minutes) :
-                    <select value={interval} onChange={(e) => setInterval(e.target.value)}>
-                        <option value={15}>15</option>
-                        <option value={30}>30</option>
-                        <option value={60}>60</option>
-                    </select>
-                </label>
-                <label className="time-slot-label">
-                    Heure de début :
-                    <div className="time-picker-container">
-                        <div className="time-picker">
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleIncrement(setStartHour, 'hour', 23)}
+        <div className="time-slot-config-container" style={{ maxWidth: '400px', margin: '0 auto', padding: '15px' }}>
+            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px', fontSize: '24px' }}>
+                Configuration des tranches horaires
+            </h2>
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontFamily: 'Roboto, sans-serif', fontWeight: '500', fontSize: '16px' }}>
+                        Intervalle (minutes)
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {[15, 30, 60].map((value) => (
+                            <label
+                                key={value}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '8px 12px',
+                                    border: interval == value ? '2px solid #1e88e5' : '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'border-color 0.2s',
+                                }}
                             >
-                                <FaChevronUp />
-                            </button>
-                            <span className="time-value">{startHour.toString().padStart(2, '0')}</span>
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleDecrement(setStartHour, 'hour', 0, 23)}
-                            >
-                                <FaChevronDown />
-                            </button>
-                        </div>
-                        <span className="time-separator">:</span>
-                        <div className="time-picker">
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleIncrement(setStartMinute, 'minute', 45)}
-                            >
-                                <FaChevronUp />
-                            </button>
-                            <span className="time-value">{startMinute.toString().padStart(2, '0')}</span>
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleDecrement(setStartMinute, 'minute', 0, 45)}
-                            >
-                                <FaChevronDown />
-                            </button>
-                        </div>
+                                <input
+                                    type="radio"
+                                    name="interval"
+                                    value={value}
+                                    checked={interval == value}
+                                    onChange={(e) => setInterval(e.target.value)}
+                                    style={{ margin: 0 }}
+                                    aria-label={`${value} minutes`}
+                                />
+                                {value} min
+                            </label>
+                        ))}
                     </div>
-                </label>
-                <label className="time-slot-label">
-                    Heure de fin :
-                    <div className="time-picker-container">
-                        <div className="time-picker">
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleIncrement(setEndHour, 'hour', 23)}
+                    {errors.interval && <p className="error" style={{ color: '#e53935', fontSize: '12px', marginTop: '5px' }}>{errors.interval}</p>}
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontFamily: 'Roboto, sans-serif', fontWeight: '500', fontSize: '16px' }}>
+                        Heure de début
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {startTimeOptions.map((value) => (
+                            <label
+                                key={value}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '8px 12px',
+                                    border: startTimeOption === value ? '2px solid #1e88e5' : '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'border-color 0.2s',
+                                }}
                             >
-                                <FaChevronUp />
-                            </button>
-                            <span className="time-value">{endHour.toString().padStart(2, '0')}</span>
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleDecrement(setEndHour, 'hour', 0, 23)}
-                            >
-                                <FaChevronDown />
-                            </button>
-                        </div>
-                        <span className="time-separator">:</span>
-                        <div className="time-picker">
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleIncrement(setEndMinute, 'minute', 45)}
-                            >
-                                <FaChevronUp />
-                            </button>
-                            <span className="time-value">{endMinute.toString().padStart(2, '0')}</span>
-                            <button
-                                className="time-picker-button"
-                                onClick={() => handleDecrement(setEndMinute, 'minute', 0, 45)}
-                            >
-                                <FaChevronDown />
-                            </button>
-                        </div>
+                                <input
+                                    type="radio"
+                                    name="startTimeOption"
+                                    value={value}
+                                    checked={startTimeOption === value}
+                                    onChange={(e) => setStartTimeOption(e.target.value)}
+                                    style={{ margin: 0 }}
+                                    aria-label={value === 'custom' ? 'Heure de début personnalisée' : `Heure de début ${value}`}
+                                />
+                                {value === 'custom' ? 'Autre' : value}
+                            </label>
+                        ))}
                     </div>
-                </label>
-            </div>
-            <div className="button-group">
-                <Button className="button-base button-primary" onClick={handleSubmit}>Valider</Button>
-                <Button className="button-base button-reinitialiser" onClick={handleReset}>Réinitialiser</Button>
-            </div>
+                    {startTimeOption === 'custom' && (
+                        <input
+                            type="time"
+                            value={startTimeCustom}
+                            onChange={(e) => setStartTimeCustom(e.target.value)}
+                            step={1800}
+                            style={{
+                                maxWidth: '250px',
+                                padding: '8px',
+                                borderRadius: '4px',
+                                fontFamily: 'Roboto, sans-serif',
+                                fontSize: '14px',
+                                border: errors.startTime ? '1px solid #e53935' : '1px solid #ccc',
+                                marginTop: '8px',
+                            }}
+                            aria-label="Heure de début personnalisée"
+                            aria-describedby="startTime-error"
+                        />
+                    )}
+                    {errors.startTime && <p id="startTime-error" className="error" style={{ color: '#e53935', fontSize: '12px', marginTop: '5px' }}>{errors.startTime}</p>}
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontFamily: 'Roboto, sans-serif', fontWeight: '500', fontSize: '16px' }}>
+                        Heure de fin
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {endTimeOptions.map((value) => (
+                            <label
+                                key={value}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '8px 12px',
+                                    border: endTimeOption === value ? '2px solid #1e88e5' : '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    transition: 'border-color 0.2s',
+                                }}
+                            >
+                                <input
+                                    type="radio"
+                                    name="endTimeOption"
+                                    value={value}
+                                    checked={endTimeOption === value}
+                                    onChange={(e) => setEndTimeOption(e.target.value)}
+                                    style={{ margin: 0 }}
+                                    aria-label={value === 'custom' ? 'Heure de fin personnalisée' : `Heure de fin ${value}`}
+                                />
+                                {value === 'custom' ? 'Autre' : value}
+                            </label>
+                        ))}
+                    </div>
+                    {endTimeOption === 'custom' && (
+                        <input
+                            type="time"
+                            value={endTimeCustom}
+                            onChange={(e) => setEndTimeCustom(e.target.value)}
+                            step={1800}
+                            style={{
+                                maxWidth: '250px',
+                                padding: '8px',
+                                borderRadius: '4px',
+                                fontFamily: 'Roboto, sans-serif',
+                                fontSize: '14px',
+                                border: errors.endTime ? '1px solid #e53935' : '1px solid #ccc',
+                                marginTop: '8px',
+                            }}
+                            aria-label="Heure de fin personnalisée"
+                            aria-describedby="endTime-error"
+                        />
+                    )}
+                    {errors.endTime && <p id="endTime-error" className="error" style={{ color: '#e53935', fontSize: '12px', marginTop: '5px' }}>{errors.endTime}</p>}
+                </div>
+                <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
+                    <Button
+                        className="button-base button-primary"
+                        onClick={validateAndSave}
+                        disabled={!!errors.interval || !!errors.startTime || !!errors.endTime}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                        aria-label="Valider la configuration"
+                    >
+                        Valider
+                    </Button>
+                    <Button
+                        className="button-base button-reinitialiser"
+                        onClick={reset}
+                        style={{ backgroundColor: '#e53935', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                        aria-label="Réinitialiser la configuration"
+                    >
+                        Réinitialiser
+                    </Button>
+                </div>
+            </form>
+            <footer style={{ textAlign: 'center', marginTop: '15px', fontFamily: 'Roboto, sans-serif', fontSize: '12px' }}>
+                © Nicolas Lefèvre 2025
+            </footer>
         </div>
     );
 };

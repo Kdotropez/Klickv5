@@ -1,41 +1,42 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { format, addMinutes, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const RecapModal = ({ type, employee, shop, days, config, selectedWeek, planning, onClose }) => {
+const RecapModal = ({ type, employee, shop, days, config, selectedWeek, planning, onClose, selectedEmployees }) => {
     const [error, setError] = useState('');
 
-    if (!planning || !config || !days || !shop) {
-        setError('Erreur : Données manquantes pour afficher le récapitulatif.');
-        return (
-            <div className="modal-overlay">
-                <div className="modal-content">
-                    <button className="modal-close" onClick={onClose}>
-                        ✕
-                    </button>
-                    <h3>Erreur</h3>
-                    <p>{error}</p>
-                </div>
-            </div>
-        );
-    }
+    useEffect(() => {
+        console.log('RecapModal props:', { type, employee, shop, days, config, selectedWeek, planning, selectedEmployees }); // Débogage
+        if (!planning || !config || !days || !shop) {
+            setError('Erreur : Données manquantes pour afficher le récapitulatif.');
+        } else {
+            setError('');
+        }
+    }, [planning, config, days, shop]);
 
     const dayColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d6e6ff', '#d4f4e2', '#f0e6fa', '#fffde6'];
 
     const getEmployeeSchedule = (employee, day) => {
         const dateKey = format(day, 'yyyy-MM-dd');
         const slots = planning[employee]?.[dateKey] || [];
-        if (slots.length === 0) {
+        console.log('getEmployeeSchedule:', { employee, dateKey, slots }); // Débogage
+        if (!slots || slots.length === 0 || !Array.isArray(slots)) {
             return { arrival: '', exit1: '', return1: '', exit2: '', return2: '', end: '', hours: 0, hasSecondPause: false };
         }
 
-        const sortedSlots = slots.sort((a, b) => {
-            const aTime = a >= '00:00' && a < '06:00' ? `24:${a.split(':')[1]}` : a;
-            const bTime = b >= '00:00' && b < '06:00' ? `24:${b.split(':')[1]}` : b;
-            return aTime.localeCompare(bTime);
-        });
+        const sortedSlots = slots
+            .filter(slot => slot && /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(slot))
+            .sort((a, b) => {
+                const aTime = a >= '00:00' && a < '06:00' ? `24:${a.split(':')[1]}` : a;
+                const bTime = b >= '00:00' && b < '06:00' ? `24:${b.split(':')[1]}` : b;
+                return aTime.localeCompare(bTime);
+            });
+
+        if (sortedSlots.length === 0) {
+            return { arrival: '', exit1: '', return1: '', exit2: '', return2: '', end: '', hours: 0, hasSecondPause: false };
+        }
 
         let arrival = sortedSlots[0];
         let exit1 = '';
@@ -146,6 +147,20 @@ const RecapModal = ({ type, employee, shop, days, config, selectedWeek, planning
         : getWeeklyRecap().some(row => row.hasSecondPause);
 
     const recapData = type === 'employee' ? getIndividualRecap(employee) : getWeeklyRecap();
+
+    if (error) {
+        return (
+            <div className="modal-overlay">
+                <div className="modal-content">
+                    <button className="modal-close" onClick={onClose}>
+                        ✕
+                    </button>
+                    <h3>Erreur</h3>
+                    <p>{error}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="modal-overlay">

@@ -48,7 +48,8 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
         setErrors(newErrors);
     }, [interval, startTimeOption, endTimeOption, startTimeCustom, endTimeCustom]);
 
-    const validateAndSave = () => {
+    const validateAndSave = async (e) => {
+        e.preventDefault(); // Empêcher la soumission par défaut du formulaire
         if (errors.interval || errors.startTime || errors.endTime) {
             alert(`Erreur :\n${Object.values(errors).filter(e => e).join('\n')}`);
             return;
@@ -107,7 +108,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
             <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px', fontSize: '24px' }}>
                 Configuration des tranches horaires
             </h2>
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <form onSubmit={validateAndSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontFamily: 'Roboto, sans-serif', fontWeight: '500', fontSize: '16px' }}>
                         Intervalle (minutes)
@@ -251,7 +252,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                 <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
                     <Button
                         className="button-base button-primary"
-                        onClick={validateAndSave}
+                        type="submit"
                         disabled={!!errors.interval || !!errors.startTime || !!errors.endTime}
                         style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
                         aria-label="Valider la configuration"

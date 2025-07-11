@@ -19,6 +19,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
             }
         });
+        console.log('Initial planning:', initializedPlanning); // Débogage
         return initializedPlanning;
     });
     const [showCopyPaste, setShowCopyPaste] = useState(false);
@@ -38,7 +39,32 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     });
 
     useEffect(() => {
+        // Synchroniser planning avec selectedEmployees
+        setPlanning(prev => {
+            const updatedPlanning = { ...prev };
+            selectedEmployees.forEach(employee => {
+                if (!updatedPlanning[employee]) {
+                    updatedPlanning[employee] = {};
+                    for (let i = 0; i < 7; i++) {
+                        const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                    }
+                }
+            });
+            // Supprimer les employés qui ne sont plus sélectionnés
+            Object.keys(updatedPlanning).forEach(employee => {
+                if (!selectedEmployees.includes(employee)) {
+                    delete updatedPlanning[employee];
+                }
+            });
+            console.log('Synchronized planning:', updatedPlanning); // Débogage
+            return updatedPlanning;
+        });
+    }, [selectedEmployees, selectedWeek, config]);
+
+    useEffect(() => {
         saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
+        console.log('Saved planning to localStorage:', planning); // Débogage
     }, [planning, selectedShop, selectedWeek]);
 
     const calculateDailyHours = (employee, dayIndex) => {
@@ -62,7 +88,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             newDaySlots[slotIndex] = !newDaySlots[slotIndex];
             updatedPlanning[employee][dayKey] = newDaySlots;
             console.log('Updated planning:', updatedPlanning); // Débogage
-            return updatedPlanning;
+            return { ...updatedPlanning };
         });
     };
 
@@ -120,7 +146,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     updatedPlanning[target][dayKey] = [...copied.data[employee]];
                 }
             });
-            return updatedPlanning;
+            return { ...updatedPlanning };
         });
         setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
     };

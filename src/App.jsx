@@ -14,7 +14,10 @@ function App() {
     const [selectedWeek, setSelectedWeek] = useState('');
     const [selectedEmployees, setSelectedEmployees] = useState([]);
 
-    const handleNext = (data) => {
+    const handleNext = async (data) => {
+        console.log('handleNext:', { step, data }); // Débogage
+        // Ajouter un léger délai pour s'assurer que le formulaire est soumis
+        await new Promise(resolve => setTimeout(resolve, 0));
         if (step === 1) {
             setConfig(data);
             setStep(2);
@@ -31,6 +34,7 @@ function App() {
     };
 
     const handleBack = () => {
+        console.log('handleBack:', { step }); // Débogage
         if (step === 5) {
             setStep(4);
         } else if (step === 4) {
@@ -46,6 +50,7 @@ function App() {
     };
 
     const handleReset = () => {
+        console.log('handleReset:', { step }); // Débogage
         if (step === 1) {
             setConfig(null);
         } else if (step === 2) {

@@ -31,14 +31,16 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [feedback, setFeedback] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
     const [showResetModal, setShowResetModal] = useState(false);
-    const [resetMode, setResetMode] = useState('all');
     const [resetEmployee, setResetEmployee] = useState('');
 
     const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
 
     const days = Array.from({ length: 7 }, (_, i) => {
         const date = addDays(new Date(selectedWeek), i);
-        return format(date, 'EEEE d MMMM', { locale: fr });
+        return {
+            name: format(date, 'EEEE', { locale: fr }),
+            date: format(date, 'd MMMM', { locale: fr }),
+        };
     });
 
     useEffect(() => {
@@ -110,7 +112,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 return acc;
             }, {});
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'all', data: copiedData });
-            setFeedback(`Données copiées pour ${days[sourceDay]}`);
+            setFeedback(`Données copiées pour ${days[sourceDay].name}`);
         } else if (copyMode === 'individual') {
             if (!sourceEmployee) {
                 setFeedback('Veuillez sélectionner un employé source.');
@@ -118,7 +120,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             }
             const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false) };
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'individual', data: copiedData });
-            setFeedback(`Données copiées pour ${sourceEmployee} le ${days[sourceDay]}`);
+            setFeedback(`Données copiées pour ${sourceEmployee} le ${days[sourceDay].name}`);
         } else if (copyMode === 'employeeToEmployee') {
             if (!sourceEmployee || !targetEmployee) {
                 setFeedback('Veuillez sélectionner les employés source et cible.');
@@ -126,7 +128,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             }
             const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false), targetEmployee };
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'employeeToEmployee', data: copiedData });
-            setFeedback(`Données copiées de ${sourceEmployee} vers ${targetEmployee} pour ${days[sourceDay]}`);
+            setFeedback(`Données copiées de ${sourceEmployee} vers ${targetEmployee} pour ${days[sourceDay].name}`);
         }
     };
 
@@ -158,7 +160,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             });
             return updatedPlanning;
         });
-        setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
+        setFeedback(`Données collées pour ${targetDays.map(i => days[i].name).join(', ')}`);
     };
 
     const handleReset = () => {
@@ -166,35 +168,21 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const confirmReset = () => {
-        if (resetMode === 'all') {
-            const initializedPlanning = {};
-            selectedEmployees.forEach(employee => {
-                initializedPlanning[employee] = {};
-                for (let i = 0; i < 7; i++) {
-                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                    initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-                }
-            });
-            setPlanning(initializedPlanning);
-            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, initializedPlanning);
-            setFeedback('Planning réinitialisé pour tous les employés.');
-        } else if (resetMode === 'employee') {
-            if (!resetEmployee) {
-                setFeedback('Veuillez sélectionner un employé à réinitialiser.');
-                return;
-            }
-            setPlanning(prev => {
-                const updatedPlanning = JSON.parse(JSON.stringify(prev));
-                updatedPlanning[resetEmployee] = {};
-                for (let i = 0; i < 7; i++) {
-                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                    updatedPlanning[resetEmployee][dayKey] = Array(config.timeSlots.length).fill(false);
-                }
-                saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
-                return updatedPlanning;
-            });
-            setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
+        if (!resetEmployee) {
+            setFeedback('Veuillez sélectionner un employé à réinitialiser.');
+            return;
         }
+        setPlanning(prev => {
+            const updatedPlanning = JSON.parse(JSON.stringify(prev));
+            updatedPlanning[resetEmployee] = {};
+            for (let i = 0; i < 7; i++) {
+                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                updatedPlanning[resetEmployee][dayKey] = Array(config.timeSlots.length).fill(false);
+            }
+            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+            return updatedPlanning;
+        });
+        setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
         setShowResetModal(false);
         setResetEmployee('');
     };
@@ -240,11 +228,17 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             <div className="day-buttons">
                 {days.map((day, index) => (
                     <Button
-                        key={day}
+                        key={day.name}
                         className={`button-base button-jour ${currentDay === index ? 'selected' : ''}`}
                         onClick={() => setCurrentDay(index)}
                     >
-                        {day} ({calculateDailyHours(index).toFixed(1)} h)
+                        <span className="day-button-content">
+                            {day.name}
+                            <br />
+                            {day.date}
+                            <br />
+                            ({calculateDailyHours(index).toFixed(1)} h)
+                        </span>
                     </Button>
                 ))}
             </div>
@@ -329,7 +323,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                 <label>Jour source</label>
                                 <select value={sourceDay} onChange={(e) => setSourceDay(Number(e.target.value))}>
                                     {days.map((day, index) => (
-                                        <option key={day} value={index}>{day}</option>
+                                        <option key={day.name} value={index}>{day.name} {day.date}</option>
                                     ))}
                                 </select>
                             </div>
@@ -359,7 +353,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                 <label>Jours cibles</label>
                                 <div className="target-days-grid">
                                     {days.map((day, index) => (
-                                        <div key={day} className="target-day-item">
+                                        <div key={day.name} className="target-day-item">
                                             <input
                                                 type="checkbox"
                                                 checked={targetDays.includes(index)}
@@ -369,7 +363,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                                         : [...targetDays, index]);
                                                 }}
                                             />
-                                            {day}
+                                            {day.name} {day.date}
                                         </div>
                                     ))}
                                 </div>
@@ -420,23 +414,14 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             Confirmer la réinitialisation
                         </h3>
                         <div className="form-group">
-                            <label>Mode de réinitialisation</label>
-                            <select value={resetMode} onChange={(e) => setResetMode(e.target.value)}>
-                                <option value="all">Tout le planning</option>
-                                <option value="employee">Employé spécifique</option>
+                            <label>Employé à réinitialiser</label>
+                            <select value={resetEmployee} onChange={(e) => setResetEmployee(e.target.value)}>
+                                <option value="">Choisir un employé</option>
+                                {selectedEmployees.map(employee => (
+                                    <option key={employee} value={employee}>{employee}</option>
+                                ))}
                             </select>
                         </div>
-                        {resetMode === 'employee' && (
-                            <div className="form-group">
-                                <label>Employé à réinitialiser</label>
-                                <select value={resetEmployee} onChange={(e) => setResetEmployee(e.target.value)}>
-                                    <option value="">Choisir un employé</option>
-                                    {selectedEmployees.map(employee => (
-                                        <option key={employee} value={employee}>{employee}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
                         <div className="button-group">
                             <Button className="button-base button-primary" onClick={confirmReset}>
                                 Confirmer

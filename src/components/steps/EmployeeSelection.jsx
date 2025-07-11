@@ -1,141 +1,125 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
-import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import Button from '../common/Button';
+import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import '../../assets/styles.css';
 
-const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmployees }) => {
+const EmployeeSelection = ({ selectedShop, onNext, onBack, onReset }) => {
     const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
     const [newEmployee, setNewEmployee] = useState('');
+    const [selectedEmployees, setSelectedEmployees] = useState(employees);
     const [error, setError] = useState('');
-    const [localSelectedEmployees, setLocalSelectedEmployees] = useState(selectedEmployees || []);
 
-    const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
+    useEffect(() => {
+        saveToLocalStorage(`employees_${selectedShop}`, employees);
+        // Mettre à jour selectedEmployees pour inclure tous les employés par défaut
+        setSelectedEmployees(employees);
+    }, [employees, selectedShop]);
 
     const handleAddEmployee = () => {
         if (!newEmployee.trim()) {
-            setError('Veuillez entrer un nom d’employé.');
+            setError('Le nom de l’employé ne peut pas être vide.');
             return;
         }
-        const employeeName = newEmployee.trim().toUpperCase();
-        if (employees.includes(employeeName)) {
+        if (employees.includes(newEmployee.trim().toUpperCase())) {
             setError('Cet employé existe déjà.');
             return;
         }
-        const updatedEmployees = [...employees, employeeName];
+        const updatedEmployees = [...employees, newEmployee.trim().toUpperCase()];
         setEmployees(updatedEmployees);
-        saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
+        setSelectedEmployees(updatedEmployees);
         setNewEmployee('');
         setError('');
     };
 
     const handleDeleteEmployee = (employee) => {
-        const updatedEmployees = employees.filter((e) => e !== employee);
+        const updatedEmployees = employees.filter(e => e !== employee);
         setEmployees(updatedEmployees);
-        saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
-        const updatedSelected = localSelectedEmployees.filter((e) => e !== employee);
-        setLocalSelectedEmployees(updatedSelected);
-        saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
+        setSelectedEmployees(selectedEmployees.filter(e => e !== employee));
     };
 
-    const handleSelectEmployee = (employee) => {
-        const updatedSelected = localSelectedEmployees.includes(employee)
-            ? localSelectedEmployees.filter((e) => e !== employee)
-            : [...localSelectedEmployees, employee];
-        setLocalSelectedEmployees(updatedSelected);
-        saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
+    const handleToggleEmployee = (employee) => {
+        setSelectedEmployees(
+            selectedEmployees.includes(employee)
+                ? selectedEmployees.filter(e => e !== employee)
+                : [...selectedEmployees, employee]
+        );
+        setError('');
     };
 
     const handleValidate = () => {
-        if (localSelectedEmployees.length === 0) {
+        if (selectedEmployees.length === 0) {
             setError('Veuillez sélectionner au moins un employé.');
             return;
         }
-        console.log('Validating employees:', localSelectedEmployees); // Débogage
-        onNext(localSelectedEmployees);
+        saveToLocalStorage(`selectedEmployees_${selectedShop}`, selectedEmployees);
+        onNext(selectedEmployees);
     };
 
     const handleReset = () => {
-        setEmployees([]);
         setNewEmployee('');
+        setSelectedEmployees(employees);
         setError('');
-        setLocalSelectedEmployees([]);
-        saveToLocalStorage(`employees_${selectedShop}`, []);
-        saveToLocalStorage(`selectedEmployees_${selectedShop}`, []);
         onReset();
     };
 
     return (
         <div className="step-container">
-            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
-                Sélection des employés
-            </h2>
-            {error && <p className="error" style={{ color: '#e53935', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
+            <h2>Sélection des employés</h2>
+            {error && <p className="error">{error}</p>}
+            <div className="employee-input" style={{ display: 'flex', justifyContent: 'center' }}>
+                <input
+                    type="text"
+                    value={newEmployee}
+                    onChange={(e) => setNewEmployee(e.target.value)}
+                    placeholder="Nom de l’employé"
+                    className="employee-input-field"
+                    style={{ width: '160px' }}
+                />
+                <Button
+                    className="button-base employee-add-button"
+                    onClick={handleAddEmployee}
+                    style={{ backgroundColor: '#1e88e5', color: '#fff' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                >
+                    Ajouter
+                </Button>
+            </div>
             <div className="employee-list">
-                {employees.map((employee, index) => (
+                {employees.map(employee => (
                     <div key={employee} className="employee-item">
                         <button
-                            className={`employee-button ${localSelectedEmployees.includes(employee) ? 'selected' : ''}`}
-                            onClick={() => handleSelectEmployee(employee)}
+                            className={`employee-button ${selectedEmployees.includes(employee) ? 'selected' : ''}`}
+                            onClick={() => handleToggleEmployee(employee)}
                             style={{
-                                backgroundColor: localSelectedEmployees.includes(employee) ? pastelColors[index % pastelColors.length] : '#f0f0f0',
+                                backgroundColor: selectedEmployees.includes(employee) ? '#ffe0b2' : '#ff9800',
                                 color: '#333',
-                                border: localSelectedEmployees.includes(employee) ? `2px solid #1e88e5` : `1px solid ${pastelColors[index % pastelColors.length]}`,
                             }}
-                            aria-label={`Sélectionner l’employé ${employee}`}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffcc80' : '#f57c00'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffe0b2' : '#ff9800'}
                         >
-                            <span>{employee}</span>
+                            {employee}
                             <FaTimes
                                 className="delete-icon"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
-                                aria-label={`Supprimer l’employé ${employee}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteEmployee(employee);
+                                }}
                             />
                         </button>
                     </div>
                 ))}
             </div>
-            <Button
-                className="button-base button-validate"
-                onClick={handleValidate}
-                disabled={localSelectedEmployees.length === 0}
-                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px', fontSize: '14px', width: '200px', margin: '15px auto', display: 'block' }}
-                aria-label="Valider la sélection"
-            >
-                Valider
-            </Button>
-            <div className="employee-input">
-                <input
-                    type="text"
-                    value={newEmployee}
-                    onChange={(e) => setNewEmployee(e.target.value)}
-                    placeholder="Ajoutez ici un Nouvel Employé"
-                    className="employee-input-field"
-                    aria-label="Nom de l’employé"
-                />
-                <Button
-                    className="button-base button-primary employee-add-button"
-                    onClick={handleAddEmployee}
-                    aria-label="Ajouter un employé"
-                >
-                    Ajouter
-                </Button>
-            </div>
-            <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
-                <Button
-                    className="button-base button-retour"
-                    onClick={onBack}
-                    style={{ backgroundColor: '#6c757d', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    aria-label="Retour à l’étape précédente"
-                >
+            <div className="button-group">
+                <Button className="button-base button-retour" onClick={onBack}>
                     Retour
                 </Button>
-                <Button
-                    className="button-base button-reinitialiser"
-                    onClick={handleReset}
-                    style={{ backgroundColor: '#e53935', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    aria-label="Réinitialiser les employés"
-                >
+                <Button className="button-base button-reinitialiser" onClick={handleReset}>
                     Réinitialiser
+                </Button>
+                <Button className="button-base button-validate" onClick={handleValidate}>
+                    Valider
                 </Button>
             </div>
         </div>

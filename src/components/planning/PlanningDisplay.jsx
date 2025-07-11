@@ -73,17 +73,20 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
         console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning });
+        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
         setPlanning(prev => {
-            const updatedPlanning = JSON.parse(JSON.stringify(prev));
+            const updatedPlanning = { ...prev };
             if (!updatedPlanning[employee]) {
                 updatedPlanning[employee] = {};
             }
             if (!updatedPlanning[employee][dayKey]) {
                 updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
             }
-            updatedPlanning[employee][dayKey][slotIndex] = !updatedPlanning[employee][dayKey][slotIndex];
+            const newDaySlots = [...updatedPlanning[employee][dayKey]];
+            newDaySlots[slotIndex] = !newDaySlots[slotIndex];
+            updatedPlanning[employee][dayKey] = newDaySlots;
             console.log('Updated planning:', updatedPlanning);
-            return updatedPlanning;
+            return { ...updatedPlanning };
         });
     };
 
@@ -122,7 +125,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             return;
         }
         setPlanning(prev => {
-            const updatedPlanning = JSON.parse(JSON.stringify(prev));
+            const updatedPlanning = { ...prev };
             targetDays.forEach(dayIndex => {
                 const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
                 if (copied.mode === 'all') {
@@ -141,7 +144,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     updatedPlanning[target][dayKey] = [...copied.data[employee]];
                 }
             });
-            return updatedPlanning;
+            return { ...updatedPlanning };
         });
         setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
     };

@@ -9,16 +9,19 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
     const [newEmployee, setNewEmployee] = useState('');
     const [error, setError] = useState('');
 
+    const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
+
     const handleAddEmployee = () => {
         if (!newEmployee.trim()) {
             setError('Veuillez entrer un nom d’employé.');
             return;
         }
-        if (employees.includes(newEmployee.trim().toUpperCase())) {
+        const employeeName = newEmployee.trim().toUpperCase();
+        if (employees.includes(employeeName)) {
             setError('Cet employé existe déjà.');
             return;
         }
-        const updatedEmployees = [...employees, newEmployee.trim().toUpperCase()];
+        const updatedEmployees = [...employees, employeeName];
         setEmployees(updatedEmployees);
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
         setNewEmployee('');
@@ -31,7 +34,8 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
         if (selectedEmployees.includes(employee)) {
             const updatedSelected = selectedEmployees.filter((e) => e !== employee);
-            saveToLocalStorage(`employees_${selectedShop}`, updatedSelected);
+            saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
+            onNext(updatedSelected);
         }
     };
 
@@ -39,7 +43,7 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         const updatedSelected = selectedEmployees.includes(employee)
             ? selectedEmployees.filter((e) => e !== employee)
             : [...selectedEmployees, employee];
-        saveToLocalStorage(`employees_${selectedShop}`, updatedSelected);
+        saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
         onNext(updatedSelected);
     };
 
@@ -48,47 +52,71 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         setNewEmployee('');
         setError('');
         saveToLocalStorage(`employees_${selectedShop}`, []);
+        saveToLocalStorage(`selectedEmployees_${selectedShop}`, []);
         onReset();
     };
 
     return (
         <div className="step-container">
-            <h2>Sélection des employés</h2>
-            {error && <p className="error">{error}</p>}
-            <div className="shop-input">
+            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
+                Sélection des employés
+            </h2>
+            {error && <p className="error" style={{ color: '#e53935', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
+            <div className="employee-input">
                 <input
                     type="text"
                     value={newEmployee}
                     onChange={(e) => setNewEmployee(e.target.value)}
-                    placeholder="Nom de l’employé (ex. TITOUNE)"
+                    placeholder="Ajoutez ici un Nouvel Employé"
+                    className="employee-input-field"
+                    aria-label="Nom de l’employé"
                 />
-                <Button className="button-base button-primary" onClick={handleAddEmployee}>
+                <Button
+                    className="button-base button-primary employee-add-button"
+                    onClick={handleAddEmployee}
+                    aria-label="Ajouter un employé"
+                >
                     Ajouter
                 </Button>
             </div>
-            <div className="shop-list">
-                {employees.map((employee) => (
-                    <div key={employee} className="shop-item">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={selectedEmployees.includes(employee)}
-                                onChange={() => handleSelectEmployee(employee)}
+            <div className="employee-list">
+                {employees.map((employee, index) => (
+                    <div key={employee} className="employee-item">
+                        <button
+                            className="employee-button"
+                            onClick={() => handleSelectEmployee(employee)}
+                            style={{
+                                backgroundColor: selectedEmployees.includes(employee) ? pastelColors[index % pastelColors.length] : pastelColors[index % pastelColors.length],
+                                color: '#333',
+                                border: `1px solid ${pastelColors[index % pastelColors.length]}`,
+                            }}
+                            aria-label={`Sélectionner l’employé ${employee}`}
+                        >
+                            <span>{employee}</span>
+                            <FaTimes
+                                className="delete-icon"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(employee); }}
+                                aria-label={`Supprimer l’employé ${employee}`}
                             />
-                            {employee}
-                        </label>
-                        <FaTimes className="delete-icon" onClick={() => handleDeleteEmployee(employee)} />
+                        </button>
                     </div>
                 ))}
             </div>
-            <div className="button-group">
-                <Button className="button-base button-primary" onClick={() => selectedEmployees.length > 0 && onNext(selectedEmployees)} disabled={selectedEmployees.length === 0}>
-                    Valider
-                </Button>
-                <Button className="button-base button-retour" onClick={onBack}>
+            <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <Button
+                    className="button-base button-retour"
+                    onClick={onBack}
+                    style={{ backgroundColor: '#6c757d', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                    aria-label="Retour à l’étape précédente"
+                >
                     Retour
                 </Button>
-                <Button className="button-base button-reinitialiser" onClick={handleReset}>
+                <Button
+                    className="button-base button-reinitialiser"
+                    onClick={handleReset}
+                    style={{ backgroundColor: '#e53935', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                    aria-label="Réinitialiser les employés"
+                >
                     Réinitialiser
                 </Button>
             </div>

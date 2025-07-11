@@ -267,6 +267,76 @@
             color: #d32f2f;
         }
 
+.employee-input {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.employee-input-field {
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 200px;
+}
+
+.employee-add-button {
+    padding: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
+.employee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.employee-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+}
+
+.employee-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    width: 200px;
+}
+
+    .employee-button:hover {
+        transform: scale(1.05);
+    }
+
+    .employee-button:active {
+        transform: scale(0.95);
+    }
+
+    .employee-button .delete-icon {
+        margin-left: 8px;
+        color: #e53935;
+        font-size: 14px;
+    }
+
+        .employee-button .delete-icon:hover {
+            color: #d32f2f;
+        }
+
 .date-icon {
     margin-left: 10px;
     color: #1e88e5;
@@ -583,12 +653,40 @@
         font-size: 13px;
     }
 
+    .employee-input {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .employee-input-field {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
+    .employee-add-button {
+        width: 180px;
+        padding: 6px;
+        font-size: 13px;
+    }
+
     .shop-list {
         flex-direction: column;
         align-items: center;
     }
 
+    .employee-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
     .shop-button {
+        width: 180px;
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .employee-button {
         width: 180px;
         padding: 6px 10px;
         font-size: 13px;
@@ -708,12 +806,35 @@
         font-size: 12px;
     }
 
+    .employee-input-field {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .employee-add-button {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
     .shop-list {
         flex-direction: column;
         align-items: center;
     }
 
+    .employee-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
     .shop-button {
+        width: 160px;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+
+    .employee-button {
         width: 160px;
         padding: 5px 8px;
         font-size: 12px;

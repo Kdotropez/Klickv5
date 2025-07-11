@@ -357,11 +357,43 @@
     background-color: #fff;
 }
 
-.week-submit-button {
-    padding: 8px;
+.saved-weeks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.saved-week-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+}
+
+.saved-week-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Roboto', sans-serif;
     font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
     width: 200px;
 }
+
+    .saved-week-button:hover {
+        transform: scale(1.05);
+    }
+
+    .saved-week-button:active {
+        transform: scale(0.95);
+    }
 
 .date-icon {
     margin-left: 10px;
@@ -726,9 +758,14 @@
         font-size: 13px;
     }
 
-    .week-submit-button {
+    .saved-weeks {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .saved-week-button {
         width: 180px;
-        padding: 6px;
+        padding: 6px 10px;
         font-size: 13px;
     }
 
@@ -893,9 +930,14 @@
         font-size: 12px;
     }
 
-    .week-submit-button {
+    .saved-weeks {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .saved-week-button {
         width: 160px;
-        padding: 5px;
+        padding: 5px 8px;
         font-size: 12px;
     }
 

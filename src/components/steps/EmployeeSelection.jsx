@@ -32,11 +32,9 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         const updatedEmployees = employees.filter((e) => e !== employee);
         setEmployees(updatedEmployees);
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
-        if (selectedEmployees.includes(employee)) {
-            const updatedSelected = selectedEmployees.filter((e) => e !== employee);
-            saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
-            onNext(updatedSelected);
-        }
+        const updatedSelected = selectedEmployees.filter((e) => e !== employee);
+        saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
+        onNext(updatedSelected);
     };
 
     const handleSelectEmployee = (employee) => {

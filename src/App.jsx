@@ -4,87 +4,92 @@ import ShopSelection from './components/steps/ShopSelection';
 import WeekSelection from './components/steps/WeekSelection';
 import EmployeeSelection from './components/steps/EmployeeSelection';
 import PlanningDisplay from './components/planning/PlanningDisplay';
-import { loadFromLocalStorage } from './utils/localStorage';
-import './assets/styles.css';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import './App.css';
 
-const App = () => {
+function App() {
     const [step, setStep] = useState(1);
-    const [config, setConfig] = useState(loadFromLocalStorage('timeSlotConfig') || {});
-    const [selectedShop, setSelectedShop] = useState(loadFromLocalStorage('selectedShop') || '');
-    const [selectedWeek, setSelectedWeek] = useState(loadFromLocalStorage('selectedWeek') || '');
-    const [selectedEmployees, setSelectedEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
-    const [planning, setPlanning] = useState(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
+    const [config, setConfig] = useState(null);
+    const [selectedShop, setSelectedShop] = useState('');
+    const [selectedWeek, setSelectedWeek] = useState('');
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
+
+    const handleNext = (data) => {
+        if (step === 1) {
+            setConfig(data);
+            setStep(2);
+        } else if (step === 2) {
+            setSelectedShop(data);
+            setStep(3);
+        } else if (step === 3) {
+            setSelectedWeek(data);
+            setStep(4);
+        } else if (step === 4) {
+            setSelectedEmployees(data);
+            setStep(5);
+        }
+    };
+
+    const handleBack = () => {
+        if (step === 5) {
+            setStep(4);
+        } else if (step === 4) {
+            setSelectedEmployees([]);
+            setStep(3);
+        } else if (step === 3) {
+            setSelectedWeek('');
+            setStep(2);
+        } else if (step === 2) {
+            setSelectedShop('');
+            setStep(1);
+        }
+    };
 
     const handleReset = () => {
-        setStep(1);
-        setConfig({});
-        setSelectedShop('');
-        setSelectedWeek('');
-        setSelectedEmployees([]);
-        setPlanning({});
-        localStorage.clear();
+        if (step === 1) {
+            setConfig(null);
+        } else if (step === 2) {
+            setSelectedShop('');
+        } else if (step === 3) {
+            setSelectedWeek('');
+        } else if (step === 4) {
+            setSelectedEmployees([]);
+        }
     };
 
     return (
-        <div className="app-container">
-            {step === 1 && (
-                <TimeSlotConfig
-                    onNext={(configData) => {
-                        setConfig(configData);
-                        setStep(2);
-                    }}
-                    onReset={handleReset}
-                    config={config}
-                />
-            )}
-            {step === 2 && (
-                <ShopSelection
-                    onNext={(shop) => {
-                        setSelectedShop(shop);
-                        setStep(3);
-                    }}
-                    onBack={() => setStep(1)}
-                    onReset={handleReset}
-                    selectedShop={selectedShop}
-                />
-            )}
-            {step === 3 && (
-                <WeekSelection
-                    onNext={(week) => {
-                        setSelectedWeek(week);
-                        setStep(4);
-                    }}
-                    onBack={() => setStep(2)}
-                    onReset={handleReset}
-                    selectedWeek={selectedWeek}
-                />
-            )}
-            {step === 4 && (
-                <EmployeeSelection
-                    onNext={(employees) => {
-                        setSelectedEmployees(employees);
-                        setStep(5);
-                    }}
-                    onBack={() => setStep(3)}
-                    onReset={handleReset}
-                    selectedShop={selectedShop}
-                    selectedEmployees={selectedEmployees}
-                />
-            )}
-            {step === 5 && (
-                <PlanningDisplay
-                    config={config}
-                    selectedShop={selectedShop}
-                    selectedWeek={selectedWeek}
-                    selectedEmployees={selectedEmployees}
-                    planning={planning}
-                    setPlanning={setPlanning}
-                    setStep={setStep}
-                />
-            )}
-            <footer>Klick-Planning - copyright © Nicolas Lefèvre</footer>
-        </div>
+        <ErrorBoundary>
+            <div className="App">
+                {step === 1 && (
+                    <TimeSlotConfig onNext={handleNext} onReset={handleReset} config={config} />
+                )}
+                {step === 2 && (
+                    <ShopSelection onNext={handleNext} onBack={handleBack} onReset={handleReset} selectedShop={selectedShop} />
+                )}
+                {step === 3 && (
+                    <WeekSelection onNext={handleNext} onBack={handleBack} onReset={handleReset} selectedWeek={selectedWeek} />
+                )}
+                {step === 4 && (
+                    <EmployeeSelection
+                        onNext={handleNext}
+                        onBack={handleBack}
+                        onReset={handleReset}
+                        selectedShop={selectedShop}
+                        selectedEmployees={selectedEmployees}
+                    />
+                )}
+                {step === 5 && (
+                    <PlanningDisplay
+                        config={config}
+                        selectedShop={selectedShop}
+                        selectedWeek={selectedWeek}
+                        selectedEmployees={selectedEmployees}
+                        onBack={handleBack}
+                    />
+                )}
+            </div>
+        </ErrorBoundary>
     );
-};
+}
 
 export default App;

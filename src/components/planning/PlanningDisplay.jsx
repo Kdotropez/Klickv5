@@ -16,7 +16,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             initializedPlanning[employee] = {};
             for (let i = 0; i < 7; i++) {
                 const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
+                // Vérifier si le planning sauvegardé contient des données pour cet employé et ce jour
+                initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey]
+                    ? [...savedPlanning[employee][dayKey]] // Copier les données existantes
+                    : Array(config.timeSlots.length).fill(false); // Initialiser à false si aucune donnée
             }
         });
         console.log('Initial planning:', initializedPlanning);
@@ -51,7 +54,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     updatedPlanning[employee] = {};
                     for (let i = 0; i < 7; i++) {
                         const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                        updatedPlanning[employee][dayKey] = prev[employee]?.[dayKey]
+                            ? [...prev[employee][dayKey]] // Conserver les données existantes
+                            : Array(config.timeSlots.length).fill(false);
                     }
                 }
             });

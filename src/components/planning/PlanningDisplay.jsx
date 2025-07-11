@@ -3,14 +3,28 @@ import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
-import { generatePDF } from '../../utils/pdfExport';
 import Button from '../common/Button';
 import RecapModal from './RecapModal';
 import '../../assets/styles.css';
 
 const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, onBack }) => {
     const [currentDay, setCurrentDay] = useState(0);
-    const [planning, setPlanning] = useState(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
+    const [planning, setPlanning] = useState(() => {
+        const savedPlanning = loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {};
+        const initializedPlanning = {};
+        selectedEmployees.forEach(employee => {
+            if (!savedPlanning[employee]) {
+                initializedPlanning[employee] = {};
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                    initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                }
+            } else {
+                initializedPlanning[employee] = savedPlanning[employee];
+            }
+        });
+        return initializedPlanning;
+    });
     const [showCopyPaste, setShowCopyPaste] = useState(false);
     const [copyMode, setCopyMode] = useState('all');
     const [sourceDay, setSourceDay] = useState(0);
@@ -19,12 +33,17 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [targetEmployee, setTargetEmployee] = useState('');
     const [feedback, setFeedback] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
+
     const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
 
     const days = Array.from({ length: 7 }, (_, i) => {
         const date = addDays(new Date(selectedWeek), i);
         return format(date, 'EEEE d MMMM', { locale: fr });
     });
+
+    useEffect(() => {
+        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
+    }, [planning, selectedShop, selectedWeek]);
 
     const calculateDailyHours = (employee, dayIndex) => {
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
@@ -34,19 +53,25 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
-        const updatedPlanning = { ...planning };
-        if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
-        if (!updatedPlanning[employee][dayKey]) updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-        updatedPlanning[employee][dayKey][slotIndex] = !updatedPlanning[employee][dayKey][slotIndex];
-        setPlanning(updatedPlanning);
-        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+        setPlanning(prev => {
+            const updatedPlanning = { ...prev };
+            if (!updatedPlanning[employee]) {
+                updatedPlanning[employee] = {};
+            }
+            if (!updatedPlanning[employee][dayKey]) {
+                updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+            }
+            updatedPlanning[employee][dayKey] = [...updatedPlanning[employee][dayKey]];
+            updatedPlanning[employee][dayKey][slotIndex] = !updatedPlanning[employee][dayKey][slotIndex];
+            return updatedPlanning;
+        });
     };
 
     const copyDay = () => {
         const dayKey = format(addDays(new Date(selectedWeek), sourceDay), 'yyyy-MM-dd');
         if (copyMode === 'all') {
             const copiedData = selectedEmployees.reduce((acc, employee) => {
-                acc[employee] = planning[employee]?.[dayKey] || [];
+                acc[employee] = planning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
                 return acc;
             }, {});
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'all', data: copiedData });
@@ -56,7 +81,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 setFeedback('Veuillez sélectionner un employé source.');
                 return;
             }
-            const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || [] };
+            const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false) };
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'individual', data: copiedData });
             setFeedback(`Données copiées pour ${sourceEmployee} le ${days[sourceDay]}`);
         } else if (copyMode === 'employeeToEmployee') {
@@ -64,7 +89,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 setFeedback('Veuillez sélectionner les employés source et cible.');
                 return;
             }
-            const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || [], targetEmployee };
+            const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false), targetEmployee };
             saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'employeeToEmployee', data: copiedData });
             setFeedback(`Données copiées de ${sourceEmployee} vers ${targetEmployee} pour ${days[sourceDay]}`);
         }
@@ -76,33 +101,42 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             setFeedback('Aucune donnée copiée.');
             return;
         }
-        const updatedPlanning = { ...planning };
-        targetDays.forEach(dayIndex => {
-            const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
-            if (copied.mode === 'all') {
-                Object.keys(copied.data).forEach(employee => {
+        setPlanning(prev => {
+            const updatedPlanning = { ...prev };
+            targetDays.forEach(dayIndex => {
+                const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+                if (copied.mode === 'all') {
+                    Object.keys(copied.data).forEach(employee => {
+                        if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
+                        updatedPlanning[employee][dayKey] = [...copied.data[employee]];
+                    });
+                } else if (copied.mode === 'individual') {
+                    const employee = Object.keys(copied.data)[0];
                     if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
                     updatedPlanning[employee][dayKey] = [...copied.data[employee]];
-                });
-            } else if (copied.mode === 'individual') {
-                const employee = Object.keys(copied.data)[0];
-                if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
-                updatedPlanning[employee][dayKey] = [...copied.data[employee]];
-            } else if (copied.mode === 'employeeToEmployee') {
-                const employee = Object.keys(copied.data)[0];
-                const target = copied.data.targetEmployee;
-                if (!updatedPlanning[target]) updatedPlanning[target] = {};
-                updatedPlanning[target][dayKey] = [...copied.data[employee]];
-            }
+                } else if (copied.mode === 'employeeToEmployee') {
+                    const employee = Object.keys(copied.data)[0];
+                    const target = copied.data.targetEmployee;
+                    if (!updatedPlanning[target]) updatedPlanning[target] = {};
+                    updatedPlanning[target][dayKey] = [...copied.data[employee]];
+                }
+            });
+            return updatedPlanning;
         });
-        setPlanning(updatedPlanning);
-        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
         setFeedback(`Données collées pour ${targetDays.map(i => days[i]).join(', ')}`);
     };
 
     const resetPlanning = () => {
-        setPlanning({});
-        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {});
+        const initializedPlanning = {};
+        selectedEmployees.forEach(employee => {
+            initializedPlanning[employee] = {};
+            for (let i = 0; i < 7; i++) {
+                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+            }
+        });
+        setPlanning(initializedPlanning);
+        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, initializedPlanning);
         setFeedback('Planning réinitialisé.');
     };
 
@@ -122,33 +156,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         }
     };
 
-    const generateEmployeePDF = (employee) => {
-        const dailyHours = days.map((_, index) => calculateDailyHours(employee, index));
-        const totalHours = dailyHours.reduce((sum, hours) => sum + hours, 0);
-        generatePDF('employee', { employee, days, dailyHours, totalHours, config, selectedWeek, planning });
-    };
-
-    const generateShopPDF = () => {
-        const employeeHours = selectedEmployees.map(employee => ({
-            employee,
-            dailyHours: days.map((_, index) => calculateDailyHours(employee, index)),
-            totalHours: days.reduce((sum, _, index) => sum + calculateDailyHours(employee, index), 0)
-        }));
-        generatePDF('shop', { shop: selectedShop, days, employeeHours, config, selectedWeek, planning });
-    };
-
-    const generateWeekPDF = () => {
-        const employeeHours = selectedEmployees.map(employee => ({
-            employee,
-            dailyHours: days.map((_, index) => calculateDailyHours(employee, index)),
-            totalHours: days.reduce((sum, _, index) => sum + calculateDailyHours(employee, index), 0)
-        }));
-        generatePDF('week', { shop: selectedShop, days, employeeHours, config, selectedWeek, planning });
-    };
-
     return (
         <div className="planning-container">
-            <h2 style={{ fontFamily: 'Roboto', sans-serif, textAlign: 'center' }}>
+            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
                 Planning pour {selectedShop} - Semaine du {format(new Date(selectedWeek), 'd MMMM yyyy', { locale: fr })}
             </h2>
             <div className="navigation-buttons">
@@ -231,123 +241,117 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             >
                 <FaToggleOn /> {showCopyPaste ? 'Masquer Copier/Coller' : 'Afficher Copier/Coller'}
             </Button>
-            {
-        showCopyPaste && (
-            <div className="copy-paste-section">
-                <div className="copy-paste-container">
-                    <h3>Copier/Coller un jour</h3>
-                    <div className="copy-paste-form">
-                        <div className="form-group">
-                            <label>Mode de copie</label>
-                            <select value={copyMode} onChange={(e) => setCopyMode(e.target.value)}>
-                                <option value="all">Tous les employés</option>
-                                <option value="individual">Employé spécifique</option>
-                                <option value="employeeToEmployee">D’un employé à un autre</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label>Jour source</label>
-                            <select value={sourceDay} onChange={(e) => setSourceDay(Number(e.target.value))}>
-                                {days.map((day, index) => (
-                                    <option key={day} value={index}>{day}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {copyMode !== 'all' && (
+            {showCopyPaste && (
+                <div className="copy-paste-section">
+                    <div className="copy-paste-container">
+                        <h3>Copier/Coller un jour</h3>
+                        <div className="copy-paste-form">
                             <div className="form-group">
-                                <label>Employé source</label>
-                                <select value={sourceEmployee} onChange={(e) => setSourceEmployee(e.target.value)}>
-                                    <option value="">Choisir un employé</option>
-                                    {selectedEmployees.map(employee => (
-                                        <option key={employee} value={employee}>{employee}</option>
+                                <label>Mode de copie</label>
+                                <select value={copyMode} onChange={(e) => setCopyMode(e.target.value)}>
+                                    <option value="all">Tous les employés</option>
+                                    <option value="individual">Employé spécifique</option>
+                                    <option value="employeeToEmployee">D’un employé à un autre</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Jour source</label>
+                                <select value={sourceDay} onChange={(e) => setSourceDay(Number(e.target.value))}>
+                                    {days.map((day, index) => (
+                                        <option key={day} value={index}>{day}</option>
                                     ))}
                                 </select>
                             </div>
-                        )}
-                        {copyMode === 'employeeToEmployee' && (
+                            {copyMode !== 'all' && (
+                                <div className="form-group">
+                                    <label>Employé source</label>
+                                    <select value={sourceEmployee} onChange={(e) => setSourceEmployee(e.target.value)}>
+                                        <option value="">Choisir un employé</option>
+                                        {selectedEmployees.map(employee => (
+                                            <option key={employee} value={employee}>{employee}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            {copyMode === 'employeeToEmployee' && (
+                                <div className="form-group">
+                                    <label>Employé cible</label>
+                                    <select value={targetEmployee} onChange={(e) => setTargetEmployee(e.target.value)}>
+                                        <option value="">Choisir un employé</option>
+                                        {selectedEmployees.map(employee => (
+                                            <option key={employee} value={employee}>{employee}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div className="form-group">
-                                <label>Employé cible</label>
-                                <select value={targetEmployee} onChange={(e) => setTargetEmployee(e.target.value)}>
-                                    <option value="">Choisir un employé</option>
-                                    {selectedEmployees.map(employee => (
-                                        <option key={employee} value={employee}>{employee}</option>
+                                <label>Jours cibles</label>
+                                <div className="target-days-grid">
+                                    {days.map((day, index) => (
+                                        <div key={day} className="target-day-item">
+                                            <input
+                                                type="checkbox"
+                                                checked={targetDays.includes(index)}
+                                                onChange={() => {
+                                                    setTargetDays(targetDays.includes(index)
+                                                        ? targetDays.filter(d => d !== index)
+                                                        : [...targetDays, index]);
+                                                }}
+                                            />
+                                            {day}
+                                        </div>
                                     ))}
-                                </select>
+                                </div>
                             </div>
-                        )}
+                            <div className="button-group">
+                                <Button className="button-base button-primary" onClick={copyDay}>
+                                    <FaCopy /> Copier
+                                </Button>
+                                <Button className="button-base button-primary" onClick={pasteDay}>
+                                    <FaPaste /> Coller
+                                </Button>
+                                <Button className="button-base button-reinitialiser" onClick={() => setFeedback('')}>
+                                    Réinitialiser
+                                </Button>
+                            </div>
+                            {feedback && <p className="feedback">{feedback}</p>}
+                        </div>
+                    </div>
+                    <div className="copy-paste-container">
+                        <h3>Copier/Coller une semaine existante</h3>
                         <div className="form-group">
-                            <label>Jours cibles</label>
-                            <div className="target-days-grid">
-                                {days.map((day, index) => (
-                                    <div key={day} className="target-day-item">
-                                        <input
-                                            type="checkbox"
-                                            checked={targetDays.includes(index)}
-                                            onChange={() => {
-                                                setTargetDays(targetDays.includes(index)
-                                                    ? targetDays.filter(d => d !== index)
-                                                    : [...targetDays, index]);
-                                            }}
-                                        />
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
+                            <label>Semaine source</label>
+                            <select>
+                                <option value="">Choisir une semaine</option>
+                            </select>
                         </div>
                         <div className="button-group">
-                            <Button className="button-base button-primary" onClick={copyDay}>
-                                <FaCopy /> Copier
+                            <Button className="button-base button-primary" onClick={copyWeek}>
+                                <FaCopy /> Copier semaine
                             </Button>
-                            <Button className="button-base button-primary" onClick={pasteDay}>
-                                <FaPaste /> Coller
+                            <Button className="button-base button-primary" onClick={pasteWeek}>
+                                <FaPaste /> Coller semaine
                             </Button>
                             <Button className="button-base button-reinitialiser" onClick={() => setFeedback('')}>
                                 Réinitialiser
                             </Button>
                         </div>
-                        {feedback && <p className="feedback">{feedback}</p>}
                     </div>
                 </div>
-                <div className="copy-paste-container">
-                    <h3>Copier/Coller une semaine existante</h3>
-                    <div className="form-group">
-                        <label>Semaine source</label>
-                        <select>
-                            <option value="">Choisir une semaine</option>
-                            {/* Ajouter la logique pour les semaines sauvegardées */}
-                        </select>
-                    </div>
-                    <div className="button-group">
-                        <Button className="button-base button-primary" onClick={copyWeek}>
-                            <FaCopy /> Copier semaine
-                        </Button>
-                        <Button className="button-base button-primary" onClick={pasteWeek}>
-                            <FaPaste /> Coller semaine
-                        </Button>
-                        <Button className="button-base button-reinitialiser" onClick={() => setFeedback('')}>
-                            Réinitialiser
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-    {
-        showRecapModal && (
-            <RecapModal
-                type={showRecapModal === 'week' ? 'week' : 'employee'}
-                employee={showRecapModal !== 'week' ? showRecapModal : null}
-                shop={selectedShop}
-                days={days}
-                config={config}
-                selectedWeek={selectedWeek}
-                planning={planning}
-                onClose={() => setShowRecapModal(null)}
-                onExportPDF={showRecapModal === 'week' ? generateWeekPDF : () => generateEmployeePDF(showRecapModal)}
-            />
-        )
-    }
-        </div >
+            )}
+            {showRecapModal && (
+                <RecapModal
+                    type={showRecapModal === 'week' ? 'week' : 'employee'}
+                    employee={showRecapModal !== 'week' ? showRecapModal : null}
+                    shop={selectedShop}
+                    days={days}
+                    config={config}
+                    selectedWeek={selectedWeek}
+                    planning={planning}
+                    onClose={() => setShowRecapModal(null)}
+                />
+            )}
+        </div>
     );
 };
 

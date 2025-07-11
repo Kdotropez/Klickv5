@@ -338,6 +338,10 @@
         transform: scale(0.95);
     }
 
+    .employee-button.selected {
+        border: 2px solid #1e88e5;
+    }
+
     .employee-button .delete-icon {
         margin-left: 8px;
         color: #e53935;

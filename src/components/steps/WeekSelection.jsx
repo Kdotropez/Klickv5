@@ -6,7 +6,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStora
 import '../../assets/styles.css';
 
 const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
-    const [selectedMonth, setSelectedMonth] = useState('2025-07'); // Mois actuel (juillet 2025)
+    const [selectedMonth, setSelectedMonth] = useState('2025-07');
     const [localSelectedWeek, setLocalSelectedWeek] = useState(selectedWeek || '');
     const [error, setError] = useState('');
     const [savedWeeks, setSavedWeeks] = useState(loadFromLocalStorage('savedWeeks') || []);
@@ -21,14 +21,12 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
         const startDate = startOfMonth(new Date(year, monthIndex - 1, 1));
         const weeks = [];
         let currentDate = startDate;
-        const endOfMonth = new Date(year, monthIndex, 0); // Dernier jour du mois
+        const endOfMonth = new Date(year, monthIndex, 0);
 
-        // Trouver le premier lundi
         while (currentDate.getDay() !== 1 && currentDate <= endOfMonth) {
             currentDate = addDays(currentDate, 1);
         }
 
-        // Générer les semaines
         while (currentDate <= endOfMonth) {
             const weekEnd = addDays(currentDate, 6);
             weeks.push({

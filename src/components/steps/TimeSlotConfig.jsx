@@ -46,12 +46,9 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
             newErrors.interval = 'Intervalle doit être 15, 30 ou 60 minutes.';
         }
         setErrors(newErrors);
-        console.log('Validation errors:', newErrors);
-        console.log('Effective times:', { effectiveStartTime, effectiveEndTime });
     }, [interval, startTimeOption, endTimeOption, startTimeCustom, endTimeCustom]);
 
     const validateAndSave = () => {
-        console.log('validateAndSave:', { interval, startTimeOption, startTimeCustom, endTimeOption, endTimeCustom });
         if (errors.interval || errors.startTime || errors.endTime) {
             alert(`Erreur :\n${Object.values(errors).filter(e => e).join('\n')}`);
             return;
@@ -271,9 +268,6 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                     </Button>
                 </div>
             </form>
-            <footer style={{ textAlign: 'center', marginTop: '15px', fontFamily: 'Roboto, sans-serif', fontSize: '12px' }}>
-                © Nicolas Lefèvre 2025
-            </footer>
         </div>
     );
 };

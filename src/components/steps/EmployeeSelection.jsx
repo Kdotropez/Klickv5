@@ -8,6 +8,7 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
     const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
     const [newEmployee, setNewEmployee] = useState('');
     const [error, setError] = useState('');
+    const [localSelectedEmployees, setLocalSelectedEmployees] = useState(selectedEmployees || []);
 
     const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
 
@@ -32,29 +33,33 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
         const updatedEmployees = employees.filter((e) => e !== employee);
         setEmployees(updatedEmployees);
         saveToLocalStorage(`employees_${selectedShop}`, updatedEmployees);
-        const updatedSelected = selectedEmployees.filter((e) => e !== employee);
+        const updatedSelected = localSelectedEmployees.filter((e) => e !== employee);
+        setLocalSelectedEmployees(updatedSelected);
         saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
     };
 
     const handleSelectEmployee = (employee) => {
-        const updatedSelected = selectedEmployees.includes(employee)
-            ? selectedEmployees.filter((e) => e !== employee)
-            : [...selectedEmployees, employee];
+        const updatedSelected = localSelectedEmployees.includes(employee)
+            ? localSelectedEmployees.filter((e) => e !== employee)
+            : [...localSelectedEmployees, employee];
+        setLocalSelectedEmployees(updatedSelected);
         saveToLocalStorage(`selectedEmployees_${selectedShop}`, updatedSelected);
     };
 
     const handleValidate = () => {
-        if (selectedEmployees.length === 0) {
+        if (localSelectedEmployees.length === 0) {
             setError('Veuillez sélectionner au moins un employé.');
             return;
         }
-        onNext(selectedEmployees);
+        console.log('Validating employees:', localSelectedEmployees); // Débogage
+        onNext(localSelectedEmployees);
     };
 
     const handleReset = () => {
         setEmployees([]);
         setNewEmployee('');
         setError('');
+        setLocalSelectedEmployees([]);
         saveToLocalStorage(`employees_${selectedShop}`, []);
         saveToLocalStorage(`selectedEmployees_${selectedShop}`, []);
         onReset();
@@ -70,12 +75,12 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
                 {employees.map((employee, index) => (
                     <div key={employee} className="employee-item">
                         <button
-                            className="employee-button"
+                            className={`employee-button ${localSelectedEmployees.includes(employee) ? 'selected' : ''}`}
                             onClick={() => handleSelectEmployee(employee)}
                             style={{
-                                backgroundColor: selectedEmployees.includes(employee) ? pastelColors[index % pastelColors.length] : pastelColors[index % pastelColors.length],
+                                backgroundColor: localSelectedEmployees.includes(employee) ? pastelColors[index % pastelColors.length] : '#f0f0f0',
                                 color: '#333',
-                                border: `1px solid ${pastelColors[index % pastelColors.length]}`,
+                                border: localSelectedEmployees.includes(employee) ? `2px solid #1e88e5` : `1px solid ${pastelColors[index % pastelColors.length]}`,
                             }}
                             aria-label={`Sélectionner l’employé ${employee}`}
                         >
@@ -92,7 +97,7 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
             <Button
                 className="button-base button-validate"
                 onClick={handleValidate}
-                disabled={selectedEmployees.length === 0}
+                disabled={localSelectedEmployees.length === 0}
                 style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px', fontSize: '14px', width: '200px', margin: '15px auto', display: 'block' }}
                 aria-label="Valider la sélection"
             >

@@ -13,14 +13,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const savedPlanning = loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {};
         const initializedPlanning = {};
         selectedEmployees.forEach(employee => {
-            if (!savedPlanning[employee]) {
-                initializedPlanning[employee] = {};
-                for (let i = 0; i < 7; i++) {
-                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                    initializedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-                }
-            } else {
-                initializedPlanning[employee] = savedPlanning[employee];
+            initializedPlanning[employee] = {};
+            for (let i = 0; i < 7; i++) {
+                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
             }
         });
         return initializedPlanning;
@@ -52,6 +48,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
+        console.log('toggleSlot:', { employee, slotIndex, dayIndex, planning }); // Débogage
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
         setPlanning(prev => {
             const updatedPlanning = { ...prev };
@@ -61,8 +58,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             if (!updatedPlanning[employee][dayKey]) {
                 updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
             }
-            updatedPlanning[employee][dayKey] = [...updatedPlanning[employee][dayKey]];
-            updatedPlanning[employee][dayKey][slotIndex] = !updatedPlanning[employee][dayKey][slotIndex];
+            const newDaySlots = [...updatedPlanning[employee][dayKey]];
+            newDaySlots[slotIndex] = !newDaySlots[slotIndex];
+            updatedPlanning[employee][dayKey] = newDaySlots;
+            console.log('Updated planning:', updatedPlanning); // Débogage
             return updatedPlanning;
         });
     };

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, addMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
@@ -203,6 +203,12 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         }
     };
 
+    const getEndTime = (startTime, interval) => {
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const date = new Date(2025, 0, 1, hours, minutes);
+        return format(addMinutes(date, interval), 'HH:mm');
+    };
+
     return (
         <div className="planning-container">
             <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
@@ -270,7 +276,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             <th className="fixed-col header">À</th>
                             {config.timeSlots.map((slot, index) => (
                                 <th key={slot} className="scrollable-col">
-                                    {config.timeSlots[index + 1] || ''}
+                                    {index < config.timeSlots.length - 1
+                                        ? config.timeSlots[index + 1]
+                                        : getEndTime(config.timeSlots[config.timeSlots.length - 1], config.interval)}
                                 </th>
                             ))}
                             <th className="fixed-col header"></th>

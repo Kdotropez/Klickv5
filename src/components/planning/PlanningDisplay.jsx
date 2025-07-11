@@ -74,8 +74,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
-        console.log('toggleSlot:', { employee, slotIndex, dayIndex, planning }); // Débogage
-        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+        console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning }); // Débogage
         setPlanning(prev => {
             const updatedPlanning = { ...prev };
             if (!updatedPlanning[employee]) {
@@ -373,6 +372,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     config={config}
                     selectedWeek={selectedWeek}
                     planning={planning}
+                    selectedEmployees={selectedEmployees}
                     onClose={() => setShowRecapModal(null)}
                 />
             )}

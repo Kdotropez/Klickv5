@@ -61,27 +61,18 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                 Sélection de la boutique
             </h2>
             {error && <p className="error" style={{ color: '#e53935', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-            <div className="shop-input" style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <div className="shop-input">
                 <input
                     type="text"
                     value={newShop}
                     onChange={(e) => setNewShop(e.target.value)}
-                    placeholder="ex. CANNES"
-                    style={{
-                        padding: '8px',
-                        borderRadius: '4px',
-                        fontFamily: 'Roboto, sans-serif',
-                        fontSize: '14px',
-                        border: '1px solid #ccc',
-                        flex: '1',
-                        minWidth: '200px'
-                    }}
+                    placeholder="Ajoutez ici une Nouvelle Boutique"
+                    className="shop-input-field"
                     aria-label="Nom de la boutique"
                 />
                 <Button
-                    className="button-base button-primary"
+                    className="button-base button-primary shop-add-button"
                     onClick={handleAddShop}
-                    style={{ padding: '8px 16px', fontSize: '14px' }}
                     aria-label="Ajouter une boutique"
                 >
                     Ajouter
@@ -94,14 +85,9 @@ const ShopSelection = ({ onNext, onBack, onReset }) => {
                             className="shop-button"
                             onClick={() => handleSelectShop(shop)}
                             style={{
-                                backgroundColor: selectedShop === shop ? pastelColors[index % pastelColors.length] : '#f0f0f0',
-                                color: selectedShop === shop ? '#fff' : '#333',
-                                borderRadius: '6px',
+                                backgroundColor: pastelColors[index % pastelColors.length],
+                                color: '#333',
                                 border: `1px solid ${pastelColors[index % pastelColors.length]}`,
-                                fontFamily: 'Roboto, sans-serif',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s, background-color 0.2s'
                             }}
                             aria-label={`Sélectionner la boutique ${shop}`}
                         >

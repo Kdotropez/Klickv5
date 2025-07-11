@@ -206,21 +206,40 @@ footer {
 
 .shop-input {
     display: flex;
-    gap: 10px;
-    align-items: flex-end;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.shop-input-field {
+    padding: 6px;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    width: 180px;
+}
+
+.shop-add-button {
+    padding: 6px;
+    font-size: 14px;
+    width: 180px;
 }
 
 .shop-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+    align-items: center;
 }
 
 .shop-item {
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    max-width: 200px;
 }
 
 .shop-button {
@@ -231,10 +250,11 @@ footer {
     border-radius: 6px;
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
     width: 100%;
-    max-width: 150px;
+    max-width: 180px;
 }
 
     .shop-button:hover {
@@ -556,17 +576,30 @@ footer {
 
     .shop-input {
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
+    }
+
+    .shop-input-field {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .shop-add-button {
+        width: 160px;
+        padding: 5px;
+        font-size: 12px;
     }
 
     .shop-list {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        flex-direction: column;
+        align-items: center;
     }
 
     .shop-button {
-        max-width: 120px;
+        max-width: 160px;
         padding: 6px 10px;
-        font-size: 12px;
+        font-size: 13px;
     }
 
     .fixed-col {
@@ -671,12 +704,25 @@ footer {
         font-size: 14px;
     }
 
+    .shop-input-field {
+        width: 140px;
+        padding: 4px;
+        font-size: 11px;
+    }
+
+    .shop-add-button {
+        width: 140px;
+        padding: 4px;
+        font-size: 11px;
+    }
+
     .shop-list {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        flex-direction: column;
+        align-items: center;
     }
 
     .shop-button {
-        max-width: 100px;
+        max-width: 140px;
         padding: 5px 8px;
         font-size: 12px;
     }

@@ -442,16 +442,16 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </Button>
                 ))}
             </div>
-            <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '20px', marginBottom: '15px' }}>
+            <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
                 {selectedEmployees.map((employee, index) => (
-                    <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
-                        <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                    <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '160px', alignItems: 'center' }}>
+                        <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
                             RECAP {employee}
                         </h4>
                         <Button
                             className="button-base button-recap"
                             onClick={() => setShowRecapModal(employee)}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -460,7 +460,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         <Button
                             className="button-base button-recap"
                             onClick={() => setShowRecapModal(employee + '_week')}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -472,7 +472,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                 setSelectedEmployeeForMonthlyRecap(employee);
                                 setShowEmployeeMonthlyRecap(true);
                             }}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -480,14 +480,14 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </Button>
                     </div>
                 ))}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
-                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '160px', alignItems: 'center' }}>
+                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
                         PLANNING
                     </h4>
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal('week')}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
@@ -496,7 +496,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowMonthlyRecapModal(true)}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >

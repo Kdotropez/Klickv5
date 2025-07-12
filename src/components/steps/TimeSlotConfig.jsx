@@ -12,18 +12,20 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
 
     const intervals = [15, 30, 60];
     const startTimes = ['09:00', '09:30', '10:00', 'other'];
-    const endTimes = ['19:00', '20:00', '22:00', '23:00', '24:00', '01:00', '02:00', 'other'];
+    const endTimes = ['19:00', '20:00', '22:00', '23:00', '24:00', '01:00', '02:00', '03:00', 'other'];
 
     const validateTimeFormat = (time) => {
-        // Accepter les heures de 00:00 à 23:59 et 24:00
-        const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$|^24:00$/;
+        // Accepter les heures de 00:00 à 23:59, 24:00, et 00:00 à 03:00
+        const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$|^24:00$|^0[0-3]:[0-5][0-9]$/;
         return timeRegex.test(time);
     };
 
     const generateTimeSlots = () => {
         const slots = [];
         let currentTime = parse(startTime, 'HH:mm', new Date(2025, 0, 1));
-        const end = endTime === '24:00' ? parse('00:00', 'HH:mm', new Date(2025, 0, 2)) : parse(endTime, 'HH:mm', new Date(2025, 0, 1));
+        const end = ['24:00', '00:00', '01:00', '02:00', '03:00'].includes(endTime)
+            ? parse(endTime === '24:00' ? '00:00' : endTime, 'HH:mm', new Date(2025, 0, 2))
+            : parse(endTime, 'HH:mm', new Date(2025, 0, 1));
 
         while (currentTime < end) {
             slots.push(format(currentTime, 'HH:mm'));
@@ -48,7 +50,9 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
         }
 
         const start = parse(startTime, 'HH:mm', new Date(2025, 0, 1));
-        const end = endTime === '24:00' ? parse('00:00', 'HH:mm', new Date(2025, 0, 2)) : parse(endTime, 'HH:mm', new Date(2025, 0, 1));
+        const end = ['24:00', '00:00', '01:00', '02:00', '03:00'].includes(endTime)
+            ? parse(endTime === '24:00' ? '00:00' : endTime, 'HH:mm', new Date(2025, 0, 2))
+            : parse(endTime, 'HH:mm', new Date(2025, 0, 1));
 
         if (start >= end) {
             setError('L’heure de fin doit être postérieure à l’heure de début.');
@@ -58,6 +62,7 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
         const timeSlots = generateTimeSlots();
         const newConfig = { interval: Number(interval), startTime, endTime, timeSlots };
         saveToLocalStorage('timeSlotConfig', newConfig);
+        console.log('Saved timeSlotConfig to localStorage:', newConfig);
         onNext(newConfig);
     };
 
@@ -66,6 +71,8 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
         setStartTime('09:00');
         setEndTime('19:00');
         setError('');
+        saveToLocalStorage('timeSlotConfig', { interval: 15, startTime: '09:00', endTime: '19:00', timeSlots: [] });
+        console.log('Reset timeSlotConfig in localStorage');
         onReset();
     };
 
@@ -203,9 +210,6 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                     Réinitialiser
                 </Button>
             </div>
-            <footer style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
-                Klick-Planning - copyright © Nicolas Lefevre
-            </footer>
         </div>
     );
 };

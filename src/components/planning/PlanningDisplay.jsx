@@ -311,6 +311,8 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     if (weekPlanning && Object.keys(weekPlanning).length > 0) {
                         weeks.push({ weekStart: weekKey, planning: weekPlanning });
                         console.log(`Week data for ${key}:`, weekPlanning);
+                    } else {
+                        console.log(`No valid data for week ${key}`);
                     }
                 }
             } catch (e) {
@@ -448,7 +450,16 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
                 {selectedEmployees.map((employee, index) => (
                     <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: containerWidth, alignItems: 'center' }}>
-                        <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
+                        <h4 style={{
+                            fontFamily: 'Roboto, sans-serif',
+                            textAlign: 'center',
+                            marginBottom: '4px',
+                            whiteSpace: 'normal',
+                            overflowWrap: 'break-word',
+                            lineHeight: '1.2',
+                            maxHeight: '2.4em',
+                            fontSize: '12px'
+                        }}>
                             RECAP {employee}
                         </h4>
                         <Button
@@ -484,7 +495,16 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </div>
                 ))}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: containerWidth, alignItems: 'center' }}>
-                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
+                    <h4 style={{
+                        fontFamily: 'Roboto, sans-serif',
+                        textAlign: 'center',
+                        marginBottom: '4px',
+                        whiteSpace: 'normal',
+                        overflowWrap: 'break-word',
+                        lineHeight: '1.2',
+                        maxHeight: '2.4em',
+                        fontSize: '12px'
+                    }}>
                         PLANNING
                     </h4>
                     <Button
@@ -846,6 +866,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </div>
                 </div>
             )}
+            <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
+                Klick-Planning - copyright © Nicolas Lefèvre
+            </p>
         </div>
     );
 };

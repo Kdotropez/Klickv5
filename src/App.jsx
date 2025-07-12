@@ -27,7 +27,13 @@ const App = () => {
     const handleNext = (data) => {
         if (step === 1) setConfig(data);
         if (step === 2) setSelectedShop(data);
-        if (step === 3) setSelectedWeek(data);
+        if (step === 3) {
+            if (!data || isNaN(new Date(data).getTime())) {
+                setFeedback('❌ Veuillez sélectionner une semaine valide.');
+                return;
+            }
+            setSelectedWeek(data);
+        }
         if (step === 4) setSelectedEmployees(data);
         setStep(step + 1);
     };

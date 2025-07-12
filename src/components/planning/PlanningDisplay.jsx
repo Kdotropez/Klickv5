@@ -38,10 +38,8 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         };
     });
 
-    // Calculer la largeur des conteneurs en fonction du nombre d'employés
-    const containerWidth = selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px';
-
     useEffect(() => {
+        console.log('Initial planning state:', { initialPlanning, selectedEmployees, validWeek });
         setPlanning(prev => {
             const updatedPlanning = {};
             selectedEmployees.forEach(employee => {
@@ -411,15 +409,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     return (
         <div className="planning-container">
-            {selectedWeek && !isNaN(new Date(selectedWeek).getTime()) ? (
-                <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
-                    Planning pour {selectedShop} - Semaine du {format(new Date(validWeek), 'd MMMM yyyy', { locale: fr })}
-                </h2>
-            ) : (
-                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
-                    Aucune semaine sélectionnée. Veuillez retourner à l’étape de sélection de la semaine.
-                </p>
-            )}
+            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                Planning pour {selectedShop} - Semaine du {format(new Date(validWeek), 'd MMMM yyyy', { locale: fr })}
+            </h2>
             <div className="navigation-buttons">
                 <Button className="button-base button-retour" onClick={onBack}>
                     Retour Employés
@@ -561,7 +553,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             <tr key={employee}>
                                 <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)</td>
                                 {config.timeSlots.map((_, slotIndex) => {
-                                    const dayKey = format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd');
+                                    const dayKey = format(addDays(new Date(validWeek), dayIndex), 'yyyy-MM-dd');
                                     const isChecked = planning[employee]?.[dayKey]?.[slotIndex] || false;
                                     return (
                                         <td

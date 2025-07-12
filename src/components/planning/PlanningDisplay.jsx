@@ -7,24 +7,9 @@ import Button from '../common/Button';
 import RecapModal from './RecapModal';
 import '../../assets/styles.css';
 
-const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, onBack, onBackToShop, onBackToWeek, onBackToConfig, onReset }) => {
+const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees, planning: initialPlanning, onBack, onBackToShop, onBackToWeek, onBackToConfig, onReset }) => {
     const [currentDay, setCurrentDay] = useState(0);
-    const [planning, setPlanning] = useState(() => {
-        const savedPlanning = loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {};
-        const initializedPlanning = {};
-        selectedEmployees.forEach(employee => {
-            initializedPlanning[employee] = {};
-            for (let i = 0; i < 7; i++) {
-                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                // Vérifier si le planning sauvegardé contient des données pour cet employé et ce jour
-                initializedPlanning[employee][dayKey] = savedPlanning[employee]?.[dayKey]
-                    ? [...savedPlanning[employee][dayKey]] // Copier les données existantes
-                    : Array(config.timeSlots.length).fill(false); // Initialiser à false si aucune donnée
-            }
-        });
-        console.log('Initial planning:', initializedPlanning);
-        return initializedPlanning;
-    });
+    const [planning, setPlanning] = useState(initialPlanning || {});
     const [showCopyPaste, setShowCopyPaste] = useState(false);
     const [copyMode, setCopyMode] = useState('all');
     const [sourceDay, setSourceDay] = useState(0);
@@ -32,9 +17,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [sourceEmployee, setSourceEmployee] = useState('');
     const [targetEmployee, setTargetEmployee] = useState('');
     const [feedback, setFeedback] = useState('');
-    const [showRecapModal, setShowRecapModal] = useState(null);
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetEmployee, setResetEmployee] = useState('');
+    const [showRecapModal, setShowRecapModal] = useState(null);
 
     const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
 
@@ -55,7 +40,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     for (let i = 0; i < 7; i++) {
                         const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
                         updatedPlanning[employee][dayKey] = prev[employee]?.[dayKey]
-                            ? [...prev[employee][dayKey]] // Conserver les données existantes
+                            ? [...prev[employee][dayKey]]
                             : Array(config.timeSlots.length).fill(false);
                     }
                 }
@@ -101,6 +86,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
         const slots = planning[employee]?.[dayKey] || [];
         return (slots.filter(slot => slot).length * config.interval) / 60;
+    };
+
+    const calculateEmployeeWeeklyHours = (employee) => {
+        return days.reduce((sum, _, index) => sum + calculateEmployeeDailyHours(employee, index), 0);
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
@@ -180,25 +169,54 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const handleReset = () => {
+        console.log('Opening reset modal:', { selectedEmployees });
         setShowResetModal(true);
     };
 
     const confirmReset = () => {
+        console.log('Confirm reset:', { resetEmployee, selectedEmployees });
         if (!resetEmployee) {
-            setFeedback('Veuillez sélectionner un employé à réinitialiser.');
+            setFeedback('Veuillez sélectionner une option.');
             return;
         }
-        setPlanning(prev => {
-            const updatedPlanning = JSON.parse(JSON.stringify(prev));
-            updatedPlanning[resetEmployee] = {};
-            for (let i = 0; i < 7; i++) {
-                const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                updatedPlanning[resetEmployee][dayKey] = Array(config.timeSlots.length).fill(false);
+        if (!config || !config.timeSlots || !config.timeSlots.length) {
+            setFeedback('Configuration des tranches horaires non valide.');
+            return;
+        }
+        if (!selectedEmployees || selectedEmployees.length === 0) {
+            setFeedback('Aucun employé sélectionné.');
+            return;
+        }
+        setPlanning(() => {
+            const updatedPlanning = {};
+            if (resetEmployee === 'all') {
+                // Réinitialiser tout le planning
+                selectedEmployees.forEach(employee => {
+                    updatedPlanning[employee] = {};
+                    for (let i = 0; i < 7; i++) {
+                        const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                    }
+                });
+                console.log('Reset full planning:', updatedPlanning);
+                setFeedback('Planning complet réinitialisé.');
+            } else {
+                // Réinitialiser un employé spécifique
+                selectedEmployees.forEach(employee => {
+                    updatedPlanning[employee] = employee === resetEmployee ? {} : (planning[employee] || {});
+                    if (employee === resetEmployee) {
+                        for (let i = 0; i < 7; i++) {
+                            const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                            updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                        }
+                    }
+                });
+                console.log('Reset planning for employee:', { employee: resetEmployee, updatedPlanning });
+                setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
             }
             saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
             return updatedPlanning;
         });
-        setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
         setShowResetModal(false);
         setResetEmployee('');
     };
@@ -220,10 +238,13 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const getEndTime = (startTime, interval) => {
+        if (!startTime) return '-';
         const [hours, minutes] = startTime.split(':').map(Number);
         const date = new Date(2025, 0, 1, hours, minutes);
         return format(addMinutes(date, interval), 'HH:mm');
     };
+
+    console.log('Rendering PlanningDisplay, showRecapModal:', showRecapModal);
 
     return (
         <div className="planning-container">
@@ -247,7 +268,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     Réinitialiser
                 </Button>
             </div>
-            <div className="day-buttons">
+            <div className="day-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
                 {days.map((day, index) => (
                     <Button
                         key={day.name}
@@ -271,7 +292,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal(employee)}
                     >
-                        Recap {employee}: {days.reduce((sum, _, index) => sum + calculateDailyHours(index), 0).toFixed(1)} h
+                        Recap {employee}: {calculateEmployeeWeeklyHours(employee).toFixed(1)} h
                     </Button>
                 ))}
                 <Button className="button-base button-recap" onClick={() => setShowRecapModal('week')}>
@@ -438,9 +459,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             Confirmer la réinitialisation
                         </h3>
                         <div className="form-group">
-                            <label>Employé à réinitialiser</label>
+                            <label>Réinitialiser</label>
                             <select value={resetEmployee} onChange={(e) => setResetEmployee(e.target.value)}>
-                                <option value="">Choisir un employé</option>
+                                <option value="">Choisir une option</option>
+                                <option value="all">Tous les employés</option>
                                 {selectedEmployees.map(employee => (
                                     <option key={employee} value={employee}>{employee}</option>
                                 ))}
@@ -457,7 +479,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </div>
                 </div>
             )}
-            {showRecapModal && (
+            {typeof showRecapModal !== 'undefined' && showRecapModal && (
                 <RecapModal
                     type={showRecapModal === 'week' ? 'week' : 'employee'}
                     employee={showRecapModal !== 'week' ? showRecapModal : null}

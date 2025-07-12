@@ -5,6 +5,8 @@ import WeekSelection from './components/steps/WeekSelection';
 import EmployeeSelection from './components/steps/EmployeeSelection';
 import PlanningDisplay from './components/planning/PlanningDisplay';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import Button from './components/common/Button';
+import { saveToLocalStorage } from './utils/localStorage';
 import './App.css';
 
 function App() {
@@ -13,18 +15,28 @@ function App() {
     const [selectedShop, setSelectedShop] = useState('');
     const [selectedWeek, setSelectedWeek] = useState('');
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [planning, setPlanning] = useState({});
 
     const handleNext = async (data) => {
         console.log('handleNext:', { step, data });
         await new Promise(resolve => setTimeout(resolve, 0));
         if (step === 1) {
             setConfig(data);
+            saveToLocalStorage('timeSlotConfig', data);
             setStep(2);
         } else if (step === 2) {
             setSelectedShop(data);
             setStep(3);
         } else if (step === 3) {
-            setSelectedWeek(data);
+            setSelectedWeek(data.week);
+            if (data.config) {
+                setConfig(data.config);
+                saveToLocalStorage('timeSlotConfig', data.config);
+            }
+            if (data.planning) {
+                setPlanning(data.planning);
+                saveToLocalStorage(`planning_${data.selectedShop}_${data.week}`, data.planning);
+            }
             setStep(4);
         } else if (step === 4) {
             setSelectedEmployees(data);
@@ -44,6 +56,7 @@ function App() {
         setSelectedEmployees([]);
         setSelectedWeek('');
         setSelectedShop('');
+        setPlanning({});
         setStep(2);
     };
 
@@ -51,6 +64,7 @@ function App() {
         console.log('handleBackToWeek:', { step });
         setSelectedEmployees([]);
         setSelectedWeek('');
+        setPlanning({});
         setStep(3);
     };
 
@@ -60,6 +74,7 @@ function App() {
         setSelectedWeek('');
         setSelectedShop('');
         setConfig(null);
+        setPlanning({});
         setStep(1);
     };
 
@@ -67,10 +82,12 @@ function App() {
         console.log('handleReset:', { step });
         if (step === 1) {
             setConfig(null);
+            saveToLocalStorage('timeSlotConfig', null);
         } else if (step === 2) {
             setSelectedShop('');
         } else if (step === 3) {
             setSelectedWeek('');
+            setPlanning({});
         } else if (step === 4) {
             setSelectedEmployees([]);
         } else if (step === 5) {
@@ -78,7 +95,9 @@ function App() {
             setSelectedWeek('');
             setSelectedShop('');
             setConfig(null);
+            setPlanning({});
             setStep(1);
+            saveToLocalStorage('timeSlotConfig', null);
         }
     };
 
@@ -92,7 +111,14 @@ function App() {
                     <ShopSelection onNext={handleNext} onBack={handleBack} onReset={handleReset} selectedShop={selectedShop} />
                 )}
                 {step === 3 && (
-                    <WeekSelection onNext={handleNext} onBack={handleBack} onReset={handleReset} selectedWeek={selectedWeek} />
+                    <WeekSelection
+                        onNext={handleNext}
+                        onBack={handleBack}
+                        onReset={handleReset}
+                        selectedWeek={selectedWeek}
+                        selectedShop={selectedShop}
+                        planning={planning}
+                    />
                 )}
                 {step === 4 && (
                     <EmployeeSelection
@@ -109,6 +135,7 @@ function App() {
                         selectedShop={selectedShop}
                         selectedWeek={selectedWeek}
                         selectedEmployees={selectedEmployees}
+                        planning={planning}
                         onBack={handleBack}
                         onBackToShop={handleBackToShop}
                         onBackToWeek={handleBackToWeek}

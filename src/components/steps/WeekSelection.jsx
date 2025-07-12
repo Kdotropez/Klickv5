@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, addDays, addWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaTimes } from 'react-icons/fa';
@@ -6,7 +6,7 @@ import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
 import '../../assets/styles.css';
 
-const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) => {
+const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop, planning }) => {
     const [selectedMonth, setSelectedMonth] = useState('');
     const [localSelectedWeek, setLocalSelectedWeek] = useState(selectedWeek || '');
     const [error, setError] = useState('');
@@ -57,36 +57,40 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) 
             setSavedWeeks(updatedSavedWeeks);
             saveToLocalStorage('savedWeeks', updatedSavedWeeks);
 
-            // Copier le dernier planning sauvegardé pour la nouvelle semaine
-            const lastPlanning = loadFromLocalStorage(`lastPlanning_${selectedShop}`);
-            if (lastPlanning && lastPlanning.planning) {
-                saveToLocalStorage(`planning_${selectedShop}_${week}`, lastPlanning.planning);
-                console.log('Copied last planning to new week:', { newWeek: week, planning: lastPlanning.planning });
+            // Sauvegarder la configuration des tranches horaires pour la semaine
+            const currentConfig = loadFromLocalStorage('timeSlotConfig');
+            if (currentConfig) {
+                saveToLocalStorage(`timeSlotConfig_${selectedShop}_${week}`, currentConfig);
+            }
+
+            // Sauvegarder le planning actuel
+            if (planning) {
+                saveToLocalStorage(`planning_${selectedShop}_${week}`, planning);
+                console.log('Saved current planning for new week:', { newWeek: week, planning });
             }
 
             saveToLocalStorage('selectedWeek', week);
-            onNext(week);
+            onNext({ week, config: currentConfig, planning });
         }
     };
 
     const handleSavedWeekSelect = (week) => {
         setLocalSelectedWeek(week);
 
-        // Copier le dernier planning sauvegardé pour la semaine sélectionnée
-        const lastPlanning = loadFromLocalStorage(`lastPlanning_${selectedShop}`);
-        if (lastPlanning && lastPlanning.planning) {
-            saveToLocalStorage(`planning_${selectedShop}_${week}`, lastPlanning.planning);
-            console.log('Copied last planning to saved week:', { newWeek: week, planning: lastPlanning.planning });
-        }
-
+        // Restaurer la configuration des tranches horaires et le planning pour la semaine sélectionnée
+        const savedConfig = loadFromLocalStorage(`timeSlotConfig_${selectedShop}_${week}`);
+        const savedPlanning = loadFromLocalStorage(`planning_${selectedShop}_${week}`);
         saveToLocalStorage('selectedWeek', week);
-        onNext(week);
+        onNext({ week, config: savedConfig || loadFromLocalStorage('timeSlotConfig'), planning: savedPlanning || {} });
     };
 
     const handleDeleteWeek = (week) => {
         const updatedSavedWeeks = savedWeeks.filter(w => w !== week);
         setSavedWeeks(updatedSavedWeeks);
         saveToLocalStorage('savedWeeks', updatedSavedWeeks);
+        // Supprimer la configuration des tranches horaires et le planning associés
+        localStorage.removeItem(`timeSlotConfig_${selectedShop}_${week}`);
+        localStorage.removeItem(`planning_${selectedShop}_${week}`);
         if (localSelectedWeek === week) {
             setLocalSelectedWeek('');
         }
@@ -103,6 +107,11 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) 
         setError('');
         saveToLocalStorage('savedWeeks', []);
         saveToLocalStorage('selectedWeek', '');
+        // Supprimer toutes les configurations de tranches horaires et plannings associés
+        savedWeeks.forEach(week => {
+            localStorage.removeItem(`timeSlotConfig_${selectedShop}_${week}`);
+            localStorage.removeItem(`planning_${selectedShop}_${week}`);
+        });
         onReset();
         setShowResetModal(false);
     };
@@ -159,7 +168,7 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) 
                                     backgroundColor: localSelectedWeek === week ? '#d6e6ff' : '#f0f0f0',
                                     color: '#333',
                                     border: '1px solid #d6e6ff',
-                                    width: '400px'
+                                    width: '350px'
                                 }}
                                 aria-label={`Sélectionner la semaine ${week}`}
                             >

@@ -22,39 +22,80 @@ const App = () => {
         saveToLocalStorage(`employees_${selectedShop}`, selectedEmployees);
         saveToLocalStorage('selectedWeek', selectedWeek);
         saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
+        console.log('Saved to localStorage:', { selectedShop, selectedWeek, selectedEmployees });
     }, [selectedShop, selectedEmployees, selectedWeek, planning]);
 
+    useEffect(() => {
+        // Effacer le feedback après 3 secondes
+        if (feedback) {
+            const timer = setTimeout(() => setFeedback(''), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [feedback]);
+
     const handleNext = (data) => {
-        if (step === 1) setConfig(data);
-        if (step === 2) setSelectedShop(data);
-        if (step === 3) {
-            if (!data || isNaN(new Date(data).getTime())) {
-                setFeedback('❌ Veuillez sélectionner une semaine valide.');
+        console.log('handleNext called with data:', data, 'for step:', step);
+        setFeedback('');
+        if (step === 1) {
+            setConfig(data);
+            setStep(step + 1);
+        } else if (step === 2) {
+            setSelectedShop(data);
+            // Charger les employés spécifiques à la nouvelle boutique
+            setSelectedEmployees(loadFromLocalStorage(`employees_${data}`) || []);
+            saveToLocalStorage('selectedShop', data);
+            setStep(step + 1);
+        } else if (step === 3) {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!data || !dateRegex.test(data) || isNaN(new Date(data).getTime())) {
+                setFeedback('❌ Veuillez sélectionner une semaine valide (format YYYY-MM-DD).');
+                console.log('Invalid week data:', data);
                 return;
             }
             setSelectedWeek(data);
+            setStep(step + 1);
+        } else if (step === 4) {
+            setSelectedEmployees(data);
+            setStep(step + 1);
         }
-        if (step === 4) setSelectedEmployees(data);
-        setStep(step + 1);
     };
 
     const handleBack = () => {
-        setStep(step - 1);
+        console.log('handleBack called, current step:', step);
+        if (step > 1) {
+            setStep(step - 1);
+            // Recharger les données spécifiques à la boutique lors du retour
+            const storedShops = loadFromLocalStorage('shops') || [];
+            const storedSelectedShop = loadFromLocalStorage('selectedShop') || '';
+            setSelectedShop(storedSelectedShop);
+            setSelectedEmployees(loadFromLocalStorage(`employees_${storedSelectedShop}`) || []);
+            console.log('Returning to step:', step - 1, 'Restored shops:', storedShops, 'Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`employees_${storedSelectedShop}`));
+        }
     };
 
     const handleBackToShop = () => {
+        console.log('handleBackToShop called');
         setStep(2);
+        const storedShops = loadFromLocalStorage('shops') || [];
+        const storedSelectedShop = loadFromLocalStorage('selectedShop') || '';
+        setSelectedShop(storedSelectedShop);
+        setSelectedEmployees(loadFromLocalStorage(`employees_${storedSelectedShop}`) || []);
+        console.log('Restored shops:', storedShops, 'Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`employees_${storedSelectedShop}`));
     };
 
     const handleBackToWeek = () => {
+        console.log('handleBackToWeek called');
         setStep(3);
+        setSelectedWeek(loadFromLocalStorage('selectedWeek') || '');
     };
 
     const handleBackToConfig = () => {
+        console.log('handleBackToConfig called');
         setStep(1);
+        setConfig(loadFromLocalStorage('timeSlotConfig') || {});
     };
 
-    const handleReset = () => {
+    const handleReset = ({ feedback: resetFeedback }) => {
         setConfig({});
         setSelectedShop('');
         setSelectedWeek('');
@@ -62,7 +103,8 @@ const App = () => {
         setPlanning({});
         setStep(1);
         localStorage.clear();
-        setFeedback('Toutes les données ont été réinitialisées.');
+        setFeedback(resetFeedback || 'Toutes les données ont été réinitialisées.');
+        console.log('Reset all data and cleared localStorage');
     };
 
     const exportLocalStorage = () => {
@@ -91,7 +133,6 @@ const App = () => {
                 for (let key in data) {
                     localStorage.setItem(key, data[key]);
                 }
-                // Mettre à jour l'état pour refléter les données importées
                 setConfig(loadFromLocalStorage('timeSlotConfig') || {});
                 setSelectedShop(loadFromLocalStorage('selectedShop') || '');
                 setSelectedWeek(loadFromLocalStorage('selectedWeek') || '');

@@ -5,13 +5,21 @@ import Button from '../common/Button';
 import '../../assets/styles.css';
 
 const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmployees }) => {
-    const [employees, setEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
+    const [employees, setEmployees] = useState(() => loadFromLocalStorage(`employees_${selectedShop}`) || []);
     const [newEmployee, setNewEmployee] = useState('');
     const [selected, setSelected] = useState(selectedEmployees || []);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        console.log('Loaded employees for shop:', { selectedShop, employees });
+        // Recharger les employés spécifiques à la boutique lors du changement de selectedShop
+        const storedEmployees = loadFromLocalStorage(`employees_${selectedShop}`) || [];
+        setEmployees(storedEmployees);
+        setSelected(storedEmployees.filter(emp => selectedEmployees.includes(emp)));
+        console.log('Loaded employees for shop:', { selectedShop, storedEmployees });
+    }, [selectedShop]);
+
+    useEffect(() => {
+        // Sauvegarder les employés dans localStorage uniquement lorsque employees change
         saveToLocalStorage(`employees_${selectedShop}`, employees);
         console.log('Saved employees to localStorage:', { key: `employees_${selectedShop}`, employees });
     }, [employees, selectedShop]);
@@ -87,7 +95,7 @@ const EmployeeSelection = ({ onNext, onBack, onReset, selectedShop, selectedEmpl
                     <Button
                         className="button-base button-primary"
                         onClick={addEmployee}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', marginLeft: '8px' }}
+                        style={{ backgroundemode: '#1e88e5', color: '#fff', padding: '8px 16px', marginLeft: '8px' }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >

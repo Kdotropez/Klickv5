@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, isMonday, startOfWeek } from 'date-fns';
+import { format, addDays, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaArrowRight } from 'react-icons/fa';
 import Button from '../common/Button';
@@ -18,19 +18,18 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
     const handleValidate = () => {
         if (!weekStart) {
             setError('Veuillez sélectionner une date.');
+            console.log('Validation failed: No date selected');
             return;
         }
         const date = new Date(weekStart);
         if (isNaN(date.getTime())) {
             setError('La date sélectionnée est invalide.');
-            return;
-        }
-        if (!isMonday(date)) {
-            setError('La date sélectionnée doit être un lundi.');
+            console.log('Validation failed: Invalid date');
             return;
         }
         const formattedWeek = format(date, 'yyyy-MM-dd');
         console.log('Validated weekStart:', formattedWeek);
+        setError('');
         onNext(formattedWeek);
     };
 
@@ -39,7 +38,11 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
         setError('');
         saveToLocalStorage('selectedWeek', '');
         console.log('Reset selectedWeek in localStorage');
-        onReset();
+    };
+
+    const handleBack = () => {
+        console.log('handleBack called, returning to previous step');
+        onBack();
     };
 
     const getWeekRange = (date) => {
@@ -52,7 +55,7 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
         const storageKeys = Object.keys(localStorage).filter(key => key.startsWith('planning_'));
         storageKeys.forEach(key => {
             const weekKey = key.split('_')[2];
-            if (weekKey && !isNaN(new Date(weekKey).getTime()) && isMonday(new Date(weekKey))) {
+            if (weekKey && !isNaN(new Date(weekKey).getTime())) {
                 weeks.push(weekKey);
             }
         });
@@ -142,7 +145,7 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                 </Button>
                 <Button
                     className="button-base button-retour"
-                    onClick={onBack}
+                    onClick={handleBack}
                     style={{ backgroundColor: '#0d47a1', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0b3d91'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0d47a1'}

@@ -42,7 +42,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         console.log('Initial planning state:', { initialPlanning, selectedEmployees, validWeek });
         setPlanning(prev => {
             const updatedPlanning = {};
-            selectedEmployees.forEach(employee => {
+            (selectedEmployees || []).forEach(employee => {
                 updatedPlanning[employee] = prev[employee] || {};
                 for (let i = 0; i < 7; i++) {
                     const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
@@ -82,7 +82,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const calculateDailyHours = (dayIndex) => {
         const dayKey = format(addDays(new Date(validWeek), dayIndex), 'yyyy-MM-dd');
         let totalHours = 0;
-        selectedEmployees.forEach(employee => {
+        (selectedEmployees || []).forEach(employee => {
             const slots = planning[employee]?.[dayKey] || [];
             const hours = (slots.filter(slot => slot).length * config.interval) / 60;
             totalHours += hours;
@@ -126,7 +126,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const copyDay = () => {
         const dayKey = format(addDays(new Date(validWeek), sourceDay), 'yyyy-MM-dd');
         if (copyMode === 'all') {
-            const copiedData = selectedEmployees.reduce((acc, employee) => {
+            const copiedData = (selectedEmployees || []).reduce((acc, employee) => {
                 acc[employee] = planning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
                 return acc;
             }, {});
@@ -203,29 +203,15 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         }
         setPlanning(() => {
             const updatedPlanning = {};
-            if (resetEmployee === 'all') {
-                selectedEmployees.forEach(employee => {
-                    updatedPlanning[employee] = {};
-                    for (let i = 0; i < 7; i++) {
-                        const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
-                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-                    }
-                });
-                console.log('Reset full planning:', updatedPlanning);
-                setFeedback('Planning complet réinitialisé.');
-            } else {
-                selectedEmployees.forEach(employee => {
-                    updatedPlanning[employee] = employee === resetEmployee ? {} : (planning[employee] || {});
-                    if (employee === resetEmployee) {
-                        for (let i = 0; i < 7; i++) {
-                            const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
-                            updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-                        }
-                    }
-                });
-                console.log('Reset planning for employee:', { employee: resetEmployee, updatedPlanning });
-                setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
-            }
+            selectedEmployees.forEach(employee => {
+                updatedPlanning[employee] = {};
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
+                    updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
+                }
+            });
+            console.log('Reset full planning:', updatedPlanning);
+            setFeedback('Planning complet réinitialisé.');
             saveToLocalStorage(`planning_${selectedShop}_${validWeek}`, updatedPlanning);
             return updatedPlanning;
         });
@@ -331,7 +317,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
         if (weeks.length === 0) {
             console.log('No weeks found for monthly recap');
-            selectedEmployees.forEach(employee => {
+            (selectedEmployees || []).forEach(employee => {
                 monthlyTotals[employee] = 0;
                 weeklyRecaps.push({
                     employee,
@@ -342,13 +328,13 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             return { monthlyTotals, weeklyRecaps };
         }
 
-        selectedEmployees.forEach(employee => {
+        (selectedEmployees || []).forEach(employee => {
             monthlyTotals[employee] = 0;
         });
 
         weeks.forEach(({ weekStart, planning }) => {
             console.log(`Processing week ${weekStart}:`, planning);
-            selectedEmployees.forEach(employee => {
+            (selectedEmployees || []).forEach(employee => {
                 if (!planning[employee]) {
                     console.log(`No data for employee ${employee} in week ${weekStart}`);
                     weeklyRecaps.push({
@@ -447,7 +433,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 ))}
             </div>
             <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
-                {selectedEmployees.map((employee, index) => (
+                {(selectedEmployees || []).map((employee, index) => (
                     <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px', alignItems: 'center' }}>
                         <h4 style={{
                             fontFamily: 'Roboto, sans-serif',
@@ -493,7 +479,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </Button>
                     </div>
                 ))}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: (selectedEmployees || []).length <= 1 ? '200px' : (selectedEmployees || []).length <= 3 ? '160px' : '120px', alignItems: 'center' }}>
                     <h4 style={{
                         fontFamily: 'Roboto, sans-serif',
                         textAlign: 'center',
@@ -509,7 +495,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal('week')}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: (selectedEmployees || []).length <= 1 ? '200px' : (selectedEmployees || []).length <= 3 ? '160px' : '120px' }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
@@ -518,7 +504,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowMonthlyRecapModal(true)}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: (selectedEmployees || []).length <= 1 ? '200px' : (selectedEmployees || []).length <= 3 ? '160px' : '120px' }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
@@ -549,7 +535,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </tr>
                     </thead>
                     <tbody>
-                        {selectedEmployees.map((employee, empIndex) => (
+                        {(selectedEmployees || []).map((employee, empIndex) => (
                             <tr key={employee}>
                                 <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)</td>
                                 {config.timeSlots.map((_, slotIndex) => {
@@ -604,7 +590,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                     <label>Employé source</label>
                                     <select value={sourceEmployee} onChange={(e) => setSourceEmployee(e.target.value)}>
                                         <option value="">Choisir un employé</option>
-                                        {selectedEmployees.map(employee => (
+                                        {(selectedEmployees || []).map(employee => (
                                             <option key={employee} value={employee}>{employee}</option>
                                         ))}
                                     </select>
@@ -615,7 +601,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                     <label>Employé cible</label>
                                     <select value={targetEmployee} onChange={(e) => setTargetEmployee(e.target.value)}>
                                         <option value="">Choisir un employé</option>
-                                        {selectedEmployees.map(employee => (
+                                        {(selectedEmployees || []).map(employee => (
                                             <option key={employee} value={employee}>{employee}</option>
                                         ))}
                                     </select>
@@ -699,7 +685,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             <select value={resetEmployee} onChange={(e) => setResetEmployee(e.target.value)}>
                                 <option value="">Choisir une option</option>
                                 <option value="all">Tous les employés</option>
-                                {selectedEmployees.map(employee => (
+                                {(selectedEmployees || []).map(employee => (
                                     <option key={employee} value={employee}>{employee}</option>
                                 ))}
                             </select>
@@ -764,7 +750,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {selectedEmployees.map((employee, empIndex) => (
+                                        {(selectedEmployees || []).map((employee, empIndex) => (
                                             weeklyRecaps
                                                 .filter(recap => recap.employee === employee)
                                                 .map((recap, recapIndex) => (

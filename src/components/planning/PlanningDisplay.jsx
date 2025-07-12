@@ -101,7 +101,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         for (let i = 0; i < 7; i++) {
             const dayKey = format(addDays(new Date(weekStart), i), 'yyyy-MM-dd');
             totalHours += calculateEmployeeDailyHours(employee, dayKey, weekPlanning);
-        };
+        }
         console.log(`Calculating weekly hours for ${employee} starting ${weekStart}:`, { totalHours });
         return totalHours;
     };

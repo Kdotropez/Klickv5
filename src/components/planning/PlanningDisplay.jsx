@@ -35,6 +35,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         };
     });
 
+    // Calculer la largeur des conteneurs en fonction du nombre d'employés
+    const containerWidth = selectedEmployees.length <= 1 ? '200px' : selectedEmployees.length <= 3 ? '160px' : '120px';
+
     useEffect(() => {
         setPlanning(prev => {
             const updatedPlanning = {};
@@ -444,14 +447,14 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             </div>
             <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
                 {selectedEmployees.map((employee, index) => (
-                    <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '160px', alignItems: 'center' }}>
+                    <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: containerWidth, alignItems: 'center' }}>
                         <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
                             RECAP {employee}
                         </h4>
                         <Button
                             className="button-base button-recap"
                             onClick={() => setShowRecapModal(employee)}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: containerWidth }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -460,7 +463,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         <Button
                             className="button-base button-recap"
                             onClick={() => setShowRecapModal(employee + '_week')}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: containerWidth }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -472,7 +475,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                 setSelectedEmployeeForMonthlyRecap(employee);
                                 setShowEmployeeMonthlyRecap(true);
                             }}
-                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: containerWidth }}
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
@@ -480,14 +483,14 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </Button>
                     </div>
                 ))}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '160px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: containerWidth, alignItems: 'center' }}>
                     <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '4px' }}>
                         PLANNING
                     </h4>
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal('week')}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: containerWidth }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
@@ -496,7 +499,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <Button
                         className="button-base button-recap"
                         onClick={() => setShowMonthlyRecapModal(true)}
-                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: '160px' }}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '12px', width: containerWidth }}
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
@@ -762,7 +765,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             );
                         })()}
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
-                            Klick-Planning - copyright © Nicolas Lefevre
+                            Klick-Planning - copyright © Nicolas Lefèvre
                         </p>
                         <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
                             <Button
@@ -827,7 +830,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             );
                         })()}
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
-                            Klick-Planning - copyright © Nicolas Lefevre
+                            Klick-Planning - copyright © Nicolas Lefèvre
                         </p>
                         <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
                             <Button

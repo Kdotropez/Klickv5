@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, addMinutes, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, addDays, addMinutes, startOfMonth, endOfMonth, isWithinInterval, isMonday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
@@ -21,7 +21,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [resetEmployee, setResetEmployee] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
     const [showMonthlyRecapModal, setShowMonthlyRecapModal] = useState(false);
-    const [selectedMonthlyEmployee, setSelectedMonthlyEmployee] = useState('');
 
     const pastelColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#d6e6ff'];
 
@@ -80,14 +79,20 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         return totalHours;
     };
 
-    const calculateEmployeeDailyHours = (employee, dayIndex) => {
-        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
-        const slots = planning[employee]?.[dayKey] || [];
+    const calculateEmployeeDailyHours = (employee, dayKey, weekPlanning) => {
+        const slots = weekPlanning[employee]?.[dayKey] || [];
+        console.log(`Calculating daily hours for ${employee} on ${dayKey}:`, { slots });
         return (slots.filter(slot => slot).length * config.interval) / 60;
     };
 
-    const calculateEmployeeWeeklyHours = (employee) => {
-        return days.reduce((sum, _, index) => sum + calculateEmployeeDailyHours(employee, index), 0);
+    const calculateEmployeeWeeklyHours = (employee, weekStart, weekPlanning) => {
+        let totalHours = 0;
+        for (let i = 0; i < 7; i++) {
+            const dayKey = format(addDays(new Date(weekStart), i), 'yyyy-MM-dd');
+            totalHours += calculateEmployeeDailyHours(employee, dayKey, weekPlanning);
+        }
+        console.log(`Calculating weekly hours for ${employee} starting ${weekStart}:`, { totalHours });
+        return totalHours;
     };
 
     const toggleSlot = (employee, slotIndex, dayIndex) => {
@@ -245,7 +250,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const monthEnd = endOfMonth(new Date(selectedWeek));
         const weeks = [];
 
-        // Récupérer toutes les clés de localStorage commençant par planning_${selectedShop}_
         const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
         console.log('Storage keys found:', storageKeys);
 
@@ -253,9 +257,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             const weekKey = key.replace(`planning_${selectedShop}_`, '');
             try {
                 const weekDate = new Date(weekKey);
-                if (isWithinInterval(weekDate, { start: monthStart, end: monthEnd })) {
+                if (isWithinInterval(weekDate, { start: monthStart, end: monthEnd }) && isMonday(weekDate)) {
                     const weekPlanning = loadFromLocalStorage(key);
-                    if (weekPlanning) {
+                    if (weekPlanning && Object.keys(weekPlanning).length > 0) {
                         weeks.push({ weekStart: weekKey, planning: weekPlanning });
                     }
                 }
@@ -264,64 +268,49 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             }
         });
 
-        console.log('Weeks found for month:', weeks);
+        weeks.sort((a, b) => new Date(a.weekStart) - new Date(b.weekStart));
+        console.log('Sorted weeks found for month:', weeks);
         return weeks;
     };
 
-    const getMonthlyRecapData = (employee) => {
+    const getMonthlyRecapData = () => {
         const weeks = getMonthlyWeeks();
-        const recapData = [];
+        const monthlyTotals = {};
+        const weeklyRecaps = [];
 
         if (weeks.length === 0) {
-            console.log('No weeks found for recap:', { employee, month: format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr }) });
-            return recapData;
+            console.log('No weeks found for monthly recap');
+            return { monthlyTotals: {}, weeklyRecaps: [] };
         }
 
-        weeks.forEach(({ weekStart, planning }, weekIndex) => {
-            for (let i = 0; i < 7; i++) {
-                const dayKey = format(addDays(new Date(weekStart), i), 'yyyy-MM-dd');
-                const slots = planning[employee]?.[dayKey] || [];
-                let start = null, end = null, breakStart = null, breakEnd = null;
-
-                if (!planning[employee] || !planning[employee][dayKey]) {
-                    console.log(`No data for employee ${employee} on ${dayKey}`);
-                    recapData.push({
-                        day: format(addDays(new Date(weekStart), i), 'd MMMM yyyy', { locale: fr }),
-                        start: '-',
-                        end: '-',
-                        breakStart: '-',
-                        breakEnd: '-',
-                        hours: '0.0'
-                    });
-                    continue;
-                }
-
-                for (let j = 0; j < slots.length; j++) {
-                    if (slots[j]) {
-                        if (!start) start = config.timeSlots[j];
-                        end = config.timeSlots[j];
-                    } else if (start && !breakStart) {
-                        breakStart = config.timeSlots[j];
-                    } else if (breakStart && !breakEnd && slots[j]) {
-                        breakEnd = config.timeSlots[j - 1];
-                        break;
-                    }
-                }
-
-                const hours = (slots.filter(slot => slot).length * config.interval) / 60;
-                recapData.push({
-                    day: format(addDays(new Date(weekStart), i), 'd MMMM yyyy', { locale: fr }),
-                    start: start || '-',
-                    end: end ? getEndTime(end, config.interval) : '-',
-                    breakStart: breakStart || '-',
-                    breakEnd: breakEnd ? getEndTime(breakEnd, config.interval) : '-',
-                    hours: hours.toFixed(1)
-                });
-            }
+        selectedEmployees.forEach(employee => {
+            monthlyTotals[employee] = 0;
         });
 
-        console.log('Monthly recap data for employee:', { employee, recapData });
-        return recapData;
+        weeks.forEach(({ weekStart, planning }) => {
+            selectedEmployees.forEach(employee => {
+                if (!planning[employee]) {
+                    console.log(`No data for employee ${employee} in week ${weekStart}`);
+                    weeklyRecaps.push({
+                        employee,
+                        week: `Semaine du ${format(new Date(weekStart), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(weekStart), 6), 'd MMMM yyyy', { locale: fr })}`,
+                        hours: '0.0'
+                    });
+                    return;
+                }
+
+                const weekTotalHours = calculateEmployeeWeeklyHours(employee, weekStart, planning);
+                monthlyTotals[employee] += weekTotalHours;
+                weeklyRecaps.push({
+                    employee,
+                    week: `Semaine du ${format(new Date(weekStart), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(weekStart), 6), 'd MMMM yyyy', { locale: fr })}`,
+                    hours: weekTotalHours.toFixed(1)
+                });
+            });
+        });
+
+        console.log('Monthly recap data:', { monthlyTotals, weeklyRecaps });
+        return { monthlyTotals, weeklyRecaps };
     };
 
     console.log('Rendering PlanningDisplay, showRecapModal:', showRecapModal);
@@ -372,7 +361,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         className="button-base button-recap"
                         onClick={() => setShowRecapModal(employee)}
                     >
-                        Recap {employee}: {calculateEmployeeWeeklyHours(employee).toFixed(1)} h
+                        Recap {employee}: {calculateEmployeeWeeklyHours(employee, selectedWeek, planning).toFixed(1)} h
                     </Button>
                 ))}
                 <Button className="button-base button-recap" onClick={() => setShowRecapModal('week')}>
@@ -407,7 +396,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <tbody>
                         {selectedEmployees.map((employee, empIndex) => (
                             <tr key={employee}>
-                                <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, currentDay).toFixed(1)} h)</td>
+                                <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)</td>
                                 {config.timeSlots.map((_, slotIndex) => {
                                     const dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
                                     const isChecked = planning[employee]?.[dayKey]?.[slotIndex] || false;
@@ -422,7 +411,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                         </td>
                                     );
                                 })}
-                                <td className="fixed-col">{calculateEmployeeDailyHours(employee, currentDay).toFixed(1)} h</td>
+                                <td className="fixed-col">{calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h</td>
                             </tr>
                         ))}
                     </tbody>
@@ -580,10 +569,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <div className="modal-content">
                         <button
                             className="modal-close"
-                            onClick={() => {
-                                setShowMonthlyRecapModal(false);
-                                setSelectedMonthlyEmployee('');
-                            }}
+                            onClick={() => setShowMonthlyRecapModal(false)}
                             style={{ color: '#dc3545', fontSize: '18px' }}
                         >
                             ✕
@@ -594,63 +580,50 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
                             Mois de {format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr })}
                         </p>
-                        <div className="form-group" style={{ marginBottom: '15px' }}>
-                            <label style={{ fontFamily: 'Roboto, sans-serif' }}>Employé</label>
-                            <select
-                                value={selectedMonthlyEmployee}
-                                onChange={(e) => setSelectedMonthlyEmployee(e.target.value)}
-                                style={{ width: '200px', fontFamily: 'Roboto, sans-serif' }}
-                            >
-                                <option value="">Choisir un employé</option>
-                                {selectedEmployees.map(employee => (
-                                    <option key={employee} value={employee}>{employee}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {selectedMonthlyEmployee && (
-                            <>
-                                {getMonthlyRecapData(selectedMonthlyEmployee).length === 0 ? (
+                        {(() => {
+                            const { monthlyTotals, weeklyRecaps } = getMonthlyRecapData();
+                            if (Object.keys(monthlyTotals).length === 0) {
+                                return (
                                     <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
                                         Aucune donnée disponible pour ce mois.
                                     </p>
-                                ) : (
-                                    <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead>
-                                            <tr style={{ backgroundColor: '#f0f0f0' }}>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Jour</th>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Arrivée</th>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Sortie</th>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Retour</th>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Fin</th>
-                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Heures effectives</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {getMonthlyRecapData(selectedMonthlyEmployee).map((row, index) => (
-                                                <tr key={index} style={{ backgroundColor: pastelColors[index % pastelColors.length], marginBottom: '10px' }}>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.day}</td>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.start}</td>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakStart}</td>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakEnd}</td>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.end}</td>
-                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.hours} h</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </>
-                        )}
+                                );
+                            }
+                            return (
+                                <>
+                                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
+                                        Totaux mensuels
+                                    </h4>
+                                    {selectedEmployees.map(employee => (
+                                        <p key={employee} style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '5px' }}>
+                                            {employee} Total mois {monthlyTotals[employee] ? monthlyTotals[employee].toFixed(1) : '0.0'} h
+                                        </p>
+                                    ))}
+                                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', marginBottom: '10px' }}>
+                                        Récapitulatif hebdomadaire
+                                    </h4>
+                                    {selectedEmployees.map((employee, index) => (
+                                        <div key={employee} style={{ marginBottom: '10px' }}>
+                                            {weeklyRecaps
+                                                .filter(recap => recap.employee === employee)
+                                                .map((recap, recapIndex) => (
+                                                    <p key={recapIndex} style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '5px' }}>
+                                                        {recap.employee} Total {recap.week} {recap.hours} h
+                                                    </p>
+                                                ))}
+                                            {index < selectedEmployees.length - 1 && <div style={{ height: '10px' }} />}
+                                        </div>
+                                    ))}
+                                </>
+                            );
+                        })()}
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
                             Klick-Planning - copyright © Nicolas Lefevre
                         </p>
                         <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
                             <Button
                                 className="button-base button-retour"
-                                onClick={() => {
-                                    setShowMonthlyRecapModal(false);
-                                    setSelectedMonthlyEmployee('');
-                                }}
+                                onClick={() => setShowMonthlyRecapModal(false)}
                             >
                                 Fermer
                             </Button>

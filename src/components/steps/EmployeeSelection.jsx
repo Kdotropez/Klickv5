@@ -63,6 +63,11 @@ const EmployeeSelection = ({ selectedShop, onNext, onBack, onReset }) => {
         onReset();
     };
 
+    const handleBack = () => {
+        console.log('Back button clicked in EmployeeSelection');
+        onBack && onBack();
+    };
+
     return (
         <div className="step-container">
             <h2>Sélection des employés</h2>
@@ -110,16 +115,18 @@ const EmployeeSelection = ({ selectedShop, onNext, onBack, onReset }) => {
                         </button>
                     </div>
                 ))}
+                <div className="employee-item">
+                    <Button className="button-base button-validate" onClick={handleValidate}>
+                        Valider
+                    </Button>
+                </div>
             </div>
             <div className="button-group">
-                <Button className="button-base button-retour" onClick={onBack}>
+                <Button className="button-base button-retour" onClick={handleBack}>
                     Retour
                 </Button>
                 <Button className="button-base button-reinitialiser" onClick={handleReset}>
                     Réinitialiser
-                </Button>
-                <Button className="button-base button-validate" onClick={handleValidate}>
-                    Valider
                 </Button>
             </div>
         </div>

@@ -62,7 +62,13 @@ const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
                     className="shop-input-field"
                     style={{ width: '160px' }}
                 />
-                <Button className="button-base shop-add-button" onClick={handleAddShop}>
+                <Button
+                    className="button-base shop-add-button"
+                    onClick={handleAddShop}
+                    style={{ backgroundColor: '#1e88e5', color: '#fff' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                >
                     Ajouter
                 </Button>
             </div>
@@ -73,11 +79,11 @@ const ShopSelection = ({ onNext, onBack, onReset, selectedShop }) => {
                             className="shop-button"
                             onClick={() => handleSelectShop(shop)}
                             style={{
-                                backgroundColor: localSelectedShop === shop ? '#d4f4e2' : '#4caf50',
+                                backgroundColor: localSelectedShop === shop ? '#ffe0b2' : '#ff9800',
                                 color: '#333',
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#a5d6a7' : '#388e3c'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#d4f4e2' : '#4caf50'}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#ffcc80' : '#f57c00'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = localSelectedShop === shop ? '#ffe0b2' : '#ff9800'}
                         >
                             {shop}
                             <FaTimes

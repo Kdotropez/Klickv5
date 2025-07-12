@@ -34,7 +34,9 @@ function App() {
 
     const handleBack = () => {
         console.log('handleBack:', { step });
-        setStep(4);
+        if (step > 1) {
+            setStep(step - 1);
+        }
     };
 
     const handleBackToShop = () => {

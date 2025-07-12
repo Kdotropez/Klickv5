@@ -1,154 +1,190 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import TimeSlotConfig from './components/steps/TimeSlotConfig';
 import ShopSelection from './components/steps/ShopSelection';
 import WeekSelection from './components/steps/WeekSelection';
 import EmployeeSelection from './components/steps/EmployeeSelection';
 import PlanningDisplay from './components/planning/PlanningDisplay';
-import ErrorBoundary from './components/common/ErrorBoundary';
+import { loadFromLocalStorage, saveToLocalStorage } from './utils/localStorage';
 import Button from './components/common/Button';
-import { saveToLocalStorage } from './utils/localStorage';
-import './App.css';
+import './assets/styles.css';
 
-function App() {
+const App = () => {
     const [step, setStep] = useState(1);
-    const [config, setConfig] = useState(null);
-    const [selectedShop, setSelectedShop] = useState('');
-    const [selectedWeek, setSelectedWeek] = useState('');
-    const [selectedEmployees, setSelectedEmployees] = useState([]);
-    const [planning, setPlanning] = useState({});
+    const [config, setConfig] = useState(loadFromLocalStorage('timeSlotConfig') || {});
+    const [selectedShop, setSelectedShop] = useState(loadFromLocalStorage('selectedShop') || '');
+    const [selectedWeek, setSelectedWeek] = useState(loadFromLocalStorage('selectedWeek') || '');
+    const [selectedEmployees, setSelectedEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
+    const [planning, setPlanning] = useState(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
+    const [feedback, setFeedback] = useState('');
 
-    const handleNext = async (data) => {
-        console.log('handleNext:', { step, data });
-        await new Promise(resolve => setTimeout(resolve, 0));
-        if (step === 1) {
-            setConfig(data);
-            saveToLocalStorage('timeSlotConfig', data);
-            setStep(2);
-        } else if (step === 2) {
-            setSelectedShop(data);
-            setStep(3);
-        } else if (step === 3) {
-            setSelectedWeek(data.week);
-            if (data.config) {
-                setConfig(data.config);
-                saveToLocalStorage('timeSlotConfig', data.config);
-            }
-            if (data.planning) {
-                setPlanning(data.planning);
-                saveToLocalStorage(`planning_${data.selectedShop}_${data.week}`, data.planning);
-            }
-            setStep(4);
-        } else if (step === 4) {
-            setSelectedEmployees(data);
-            setStep(5);
-        }
+    useEffect(() => {
+        saveToLocalStorage('selectedShop', selectedShop);
+        saveToLocalStorage(`employees_${selectedShop}`, selectedEmployees);
+        saveToLocalStorage('selectedWeek', selectedWeek);
+        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
+    }, [selectedShop, selectedEmployees, selectedWeek, planning]);
+
+    const handleNext = (data) => {
+        if (step === 1) setConfig(data);
+        if (step === 2) setSelectedShop(data);
+        if (step === 3) setSelectedWeek(data);
+        if (step === 4) setSelectedEmployees(data);
+        setStep(step + 1);
     };
 
     const handleBack = () => {
-        console.log('handleBack:', { step });
-        if (step > 1) {
-            setStep(step - 1);
-        }
+        setStep(step - 1);
     };
 
     const handleBackToShop = () => {
-        console.log('handleBackToShop:', { step });
-        setSelectedEmployees([]);
-        setSelectedWeek('');
-        setSelectedShop('');
-        setPlanning({});
         setStep(2);
     };
 
     const handleBackToWeek = () => {
-        console.log('handleBackToWeek:', { step });
-        setSelectedEmployees([]);
-        setSelectedWeek('');
-        setPlanning({});
         setStep(3);
     };
 
     const handleBackToConfig = () => {
-        console.log('handleBackToConfig:', { step });
-        setSelectedEmployees([]);
-        setSelectedWeek('');
-        setSelectedShop('');
-        setConfig(null);
-        setPlanning({});
         setStep(1);
     };
 
     const handleReset = () => {
-        console.log('handleReset:', { step });
-        if (step === 1) {
-            setConfig(null);
-            saveToLocalStorage('timeSlotConfig', null);
-        } else if (step === 2) {
-            setSelectedShop('');
-        } else if (step === 3) {
-            setSelectedWeek('');
-            setPlanning({});
-        } else if (step === 4) {
-            setSelectedEmployees([]);
-        } else if (step === 5) {
-            setSelectedEmployees([]);
-            setSelectedWeek('');
-            setSelectedShop('');
-            setConfig(null);
-            setPlanning({});
-            setStep(1);
-            saveToLocalStorage('timeSlotConfig', null);
+        setConfig({});
+        setSelectedShop('');
+        setSelectedWeek('');
+        setSelectedEmployees([]);
+        setPlanning({});
+        setStep(1);
+        localStorage.clear();
+        setFeedback('Toutes les données ont été réinitialisées.');
+    };
+
+    const exportLocalStorage = () => {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data_localStorage.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        setFeedback('✅ Données exportées dans votre dossier de téléchargement (ex. : C:\\Users\\lefev\\Downloads\\data_localStorage.json). Copiez ce fichier sur une clé USB pour le transférer.');
+    };
+
+    const importLocalStorage = (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            setFeedback('❌ Aucun fichier sélectionné.');
+            return;
         }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                localStorage.clear();
+                for (let key in data) {
+                    localStorage.setItem(key, data[key]);
+                }
+                // Mettre à jour l'état pour refléter les données importées
+                setConfig(loadFromLocalStorage('timeSlotConfig') || {});
+                setSelectedShop(loadFromLocalStorage('selectedShop') || '');
+                setSelectedWeek(loadFromLocalStorage('selectedWeek') || '');
+                setSelectedEmployees(loadFromLocalStorage(`employees_${selectedShop}`) || []);
+                setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
+                setFeedback('✅ Données importées avec succès depuis le fichier JSON !');
+            } catch (error) {
+                setFeedback('❌ Erreur de lecture du fichier JSON');
+            }
+        };
+        reader.readAsText(file);
     };
 
     return (
-        <ErrorBoundary>
-            <div className="App">
-                {step === 1 && (
-                    <TimeSlotConfig onNext={handleNext} onReset={handleReset} config={config} />
-                )}
-                {step === 2 && (
-                    <ShopSelection onNext={handleNext} onBack={handleBack} onReset={handleReset} selectedShop={selectedShop} />
-                )}
-                {step === 3 && (
-                    <WeekSelection
-                        onNext={handleNext}
-                        onBack={handleBack}
-                        onReset={handleReset}
-                        selectedWeek={selectedWeek}
-                        selectedShop={selectedShop}
-                        planning={planning}
+        <div className="app-container">
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
+                <Button
+                    className="button-base button-primary"
+                    onClick={exportLocalStorage}
+                    style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                >
+                    📤 Exporter
+                </Button>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                        type="file"
+                        accept=".json"
+                        onChange={importLocalStorage}
+                        style={{ display: 'none' }}
                     />
-                )}
-                {step === 4 && (
-                    <EmployeeSelection
-                        onNext={handleNext}
-                        onBack={handleBack}
-                        onReset={handleReset}
-                        selectedShop={selectedShop}
-                        selectedEmployees={selectedEmployees}
-                    />
-                )}
-                {step === 5 && (
-                    <PlanningDisplay
-                        config={config}
-                        selectedShop={selectedShop}
-                        selectedWeek={selectedWeek}
-                        selectedEmployees={selectedEmployees}
-                        planning={planning}
-                        onBack={handleBack}
-                        onBackToShop={handleBackToShop}
-                        onBackToWeek={handleBackToWeek}
-                        onBackToConfig={handleBackToConfig}
-                        onReset={handleReset}
-                    />
-                )}
-                <footer style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
-                    Klick-Planning - copyright © Nicolas Lefevre
-                </footer>
+                    <Button
+                        className="button-base button-primary"
+                        onClick={(e) => e.target.previousSibling.click()}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                    >
+                        📥 Importer
+                    </Button>
+                </label>
             </div>
-        </ErrorBoundary>
+            {feedback && (
+                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('succès') ? '#4caf50' : '#e53935', marginBottom: '10px' }}>
+                    {feedback}
+                </p>
+            )}
+            {step === 1 && (
+                <TimeSlotConfig
+                    onNext={handleNext}
+                    onReset={handleReset}
+                    config={config}
+                />
+            )}
+            {step === 2 && (
+                <ShopSelection
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    onReset={handleReset}
+                    selectedShop={selectedShop}
+                />
+            )}
+            {step === 3 && (
+                <WeekSelection
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    onReset={handleReset}
+                    selectedWeek={selectedWeek}
+                />
+            )}
+            {step === 4 && (
+                <EmployeeSelection
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    onReset={handleReset}
+                    selectedShop={selectedShop}
+                    selectedEmployees={selectedEmployees}
+                />
+            )}
+            {step === 5 && (
+                <PlanningDisplay
+                    config={config}
+                    selectedShop={selectedShop}
+                    selectedWeek={selectedWeek}
+                    selectedEmployees={selectedEmployees}
+                    planning={planning}
+                    onBack={handleBack}
+                    onBackToShop={handleBackToShop}
+                    onBackToWeek={handleBackToWeek}
+                    onBackToConfig={handleBackToConfig}
+                    onReset={handleReset}
+                />
+            )}
+            <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
+                Klick-Planning - copyright © Nicolas Lefèvre
+            </p>
+        </div>
     );
-}
+};
 
 export default App;

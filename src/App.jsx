@@ -116,6 +116,9 @@ function App() {
                         onReset={handleReset}
                     />
                 )}
+                <footer style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
+                    Klick-Planning - copyright © Nicolas Lefevre
+                </footer>
             </div>
         </ErrorBoundary>
     );

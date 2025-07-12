@@ -280,7 +280,15 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
         if (weeks.length === 0) {
             console.log('No weeks found for monthly recap');
-            return { monthlyTotals: {}, weeklyRecaps: [] };
+            selectedEmployees.forEach(employee => {
+                monthlyTotals[employee] = 0;
+                weeklyRecaps.push({
+                    employee,
+                    week: `Semaine du ${format(new Date(selectedWeek), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(selectedWeek), 6), 'd MMMM yyyy', { locale: fr })}`,
+                    hours: '0.0'
+                });
+            });
+            return { monthlyTotals, weeklyRecaps };
         }
 
         selectedEmployees.forEach(employee => {
@@ -288,6 +296,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         });
 
         weeks.forEach(({ weekStart, planning }) => {
+            console.log(`Processing week ${weekStart}:`, planning);
             selectedEmployees.forEach(employee => {
                 if (!planning[employee]) {
                     console.log(`No data for employee ${employee} in week ${weekStart}`);
@@ -582,7 +591,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         </p>
                         {(() => {
                             const { monthlyTotals, weeklyRecaps } = getMonthlyRecapData();
-                            if (Object.keys(monthlyTotals).length === 0) {
+                            if (Object.keys(monthlyTotals).length === 0 || weeklyRecaps.every(recap => recap.hours === '0.0')) {
                                 return (
                                     <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
                                         Aucune donnée disponible pour ce mois.
@@ -590,31 +599,33 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                 );
                             }
                             return (
-                                <>
-                                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
-                                        Totaux mensuels
-                                    </h4>
-                                    {selectedEmployees.map(employee => (
-                                        <p key={employee} style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '5px' }}>
-                                            {employee} Total mois {monthlyTotals[employee] ? monthlyTotals[employee].toFixed(1) : '0.0'} h
-                                        </p>
-                                    ))}
-                                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', marginBottom: '10px' }}>
-                                        Récapitulatif hebdomadaire
-                                    </h4>
-                                    {selectedEmployees.map((employee, index) => (
-                                        <div key={employee} style={{ marginBottom: '10px' }}>
-                                            {weeklyRecaps
+                                <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Employé</th>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Total mois (h)</th>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Semaine</th>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Total semaine (h)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedEmployees.map((employee, empIndex) => (
+                                            weeklyRecaps
                                                 .filter(recap => recap.employee === employee)
                                                 .map((recap, recapIndex) => (
-                                                    <p key={recapIndex} style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '5px' }}>
-                                                        {recap.employee} Total {recap.week} {recap.hours} h
-                                                    </p>
-                                                ))}
-                                            {index < selectedEmployees.length - 1 && <div style={{ height: '10px' }} />}
-                                        </div>
-                                    ))}
-                                </>
+                                                    <tr key={`${employee}-${recapIndex}`} style={{ backgroundColor: pastelColors[empIndex % pastelColors.length] }}>
+                                                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recap.employee}</td>
+                                                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recapIndex === 0 ? (monthlyTotals[employee] ? monthlyTotals[employee].toFixed(1) : '0.0') : ''}</td>
+                                                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recap.week}</td>
+                                                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recap.hours}</td>
+                                                    </tr>
+                                                ))
+                                                .concat([
+                                                    <tr key={`${employee}-spacer`} style={{ height: '10px' }}><td colSpan="4"></td></tr>
+                                                ])
+                                        ))}
+                                    </tbody>
+                                </table>
                             );
                         })()}
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>

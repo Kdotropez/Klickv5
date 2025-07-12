@@ -12,25 +12,33 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
 
     useEffect(() => {
         saveToLocalStorage('selectedWeek', weekStart);
+        console.log('Saved selectedWeek to localStorage:', weekStart);
     }, [weekStart]);
 
     const handleValidate = () => {
-        if (!weekStart || isNaN(new Date(weekStart).getTime())) {
-            setError('Veuillez sélectionner un lundi valide.');
+        if (!weekStart) {
+            setError('Veuillez sélectionner une date.');
             return;
         }
-        if (!isMonday(new Date(weekStart))) {
+        const date = new Date(weekStart);
+        if (isNaN(date.getTime())) {
+            setError('La date sélectionnée est invalide.');
+            return;
+        }
+        if (!isMonday(date)) {
             setError('La date sélectionnée doit être un lundi.');
             return;
         }
-        console.log('Validated weekStart:', weekStart);
-        onNext(weekStart);
+        const formattedWeek = format(date, 'yyyy-MM-dd');
+        console.log('Validated weekStart:', formattedWeek);
+        onNext(formattedWeek);
     };
 
     const handleReset = () => {
         setWeekStart('');
         setError('');
         saveToLocalStorage('selectedWeek', '');
+        console.log('Reset selectedWeek in localStorage');
         onReset();
     };
 
@@ -69,7 +77,9 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                         onChange={(e) => {
                             const monthDate = new Date(e.target.value);
                             const monday = startOfWeek(monthDate, { weekStartsOn: 1 });
-                            setWeekStart(format(monday, 'yyyy-MM-dd'));
+                            const formattedMonday = format(monday, 'yyyy-MM-dd');
+                            setWeekStart(formattedMonday);
+                            console.log('Month selected, set weekStart to:', formattedMonday);
                         }}
                     >
                         <option value="">Choisir un mois</option>
@@ -88,7 +98,10 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                     <input
                         type="date"
                         value={weekStart}
-                        onChange={(e) => setWeekStart(e.target.value)}
+                        onChange={(e) => {
+                            setWeekStart(e.target.value);
+                            console.log('Date input changed to:', e.target.value);
+                        }}
                         style={{ width: '300px', fontFamily: 'Roboto, sans-serif' }}
                     />
                     {weekStart && (
@@ -103,7 +116,10 @@ const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
                         className="week-select"
                         style={{ width: '350px', fontFamily: 'Roboto, sans-serif' }}
                         value={weekStart}
-                        onChange={(e) => setWeekStart(e.target.value)}
+                        onChange={(e) => {
+                            setWeekStart(e.target.value);
+                            console.log('Saved week selected:', e.target.value);
+                        }}
                     >
                         <option value="">Choisir une semaine sauvegardée</option>
                         {getSavedWeeks().map(week => (

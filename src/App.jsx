@@ -25,22 +25,17 @@ const App = () => {
     }, [selectedShop, selectedEmployees, selectedWeek, planning]);
 
     const handleNext = (data) => {
-        console.log('handleNext called with data:', data, 'for step:', step);
         if (step === 1) setConfig(data);
         if (step === 2) setSelectedShop(data);
         if (step === 3) {
-            // Vérifier si data est une date valide au format YYYY-MM-DD
-            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-            if (!data || !dateRegex.test(data) || isNaN(new Date(data).getTime())) {
-                setFeedback('❌ Veuillez sélectionner une semaine valide (format YYYY-MM-DD).');
-                console.log('Invalid week data:', data);
+            if (!data || isNaN(new Date(data).getTime())) {
+                setFeedback('❌ Veuillez sélectionner une semaine valide.');
                 return;
             }
             setSelectedWeek(data);
-            setStep(step + 1);
         }
         if (step === 4) setSelectedEmployees(data);
-        if (step !== 3) setStep(step + 1);
+        setStep(step + 1);
     };
 
     const handleBack = () => {

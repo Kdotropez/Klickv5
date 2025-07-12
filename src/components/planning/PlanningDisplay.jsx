@@ -35,24 +35,22 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     useEffect(() => {
         setPlanning(prev => {
-            const updatedPlanning = { ...prev };
+            const updatedPlanning = {};
             selectedEmployees.forEach(employee => {
-                if (!updatedPlanning[employee]) {
-                    updatedPlanning[employee] = {};
-                    for (let i = 0; i < 7; i++) {
-                        const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                        updatedPlanning[employee][dayKey] = prev[employee]?.[dayKey]
-                            ? [...prev[employee][dayKey]]
-                            : Array(config.timeSlots.length).fill(false);
+                updatedPlanning[employee] = {};
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                    // Vérifier si des données existent et sont compatibles avec la nouvelle configuration
+                    const existingSlots = prev[employee]?.[dayKey];
+                    if (existingSlots && existingSlots.length === config.timeSlots.length) {
+                        updatedPlanning[employee][dayKey] = [...existingSlots];
+                    } else {
+                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
                     }
                 }
             });
-            Object.keys(updatedPlanning).forEach(employee => {
-                if (!selectedEmployees.includes(employee)) {
-                    delete updatedPlanning[employee];
-                }
-            });
-            console.log('Synchronized planning:', updatedPlanning);
+            console.log('Synchronized planning with new config:', { config, updatedPlanning });
+            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
             return updatedPlanning;
         });
     }, [selectedEmployees, selectedWeek, config]);
@@ -243,7 +241,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         return format(addMinutes(date, interval), 'HH:mm');
     };
 
-    // Récupérer les semaines du mois pour le récapitulatif mensuel
     const getMonthlyWeeks = () => {
         const monthStart = startOfMonth(new Date(selectedWeek));
         const monthEnd = endOfMonth(new Date(selectedWeek));
@@ -262,7 +259,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         return weeks;
     };
 
-    // Générer les données du récapitulatif mensuel pour un employé
     const getMonthlyRecapData = (employee) => {
         const weeks = getMonthlyWeeks();
         const recapData = [];

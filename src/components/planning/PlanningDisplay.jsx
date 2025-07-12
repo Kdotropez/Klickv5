@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, addMinutes } from 'date-fns';
+import { format, addDays, addMinutes, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
@@ -20,8 +20,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetEmployee, setResetEmployee] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
+    const [showMonthlyRecapModal, setShowMonthlyRecapModal] = useState(false);
+    const [selectedMonthlyEmployee, setSelectedMonthlyEmployee] = useState('');
 
-    const pastelColors = ['#d6e6ff', '#d4f4e2', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#e6f0fa'];
+    const pastelColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#d6e6ff'];
 
     const days = Array.from({ length: 7 }, (_, i) => {
         const date = addDays(new Date(selectedWeek), i);
@@ -61,7 +63,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     }, [planning, selectedShop, selectedWeek]);
 
     useEffect(() => {
-        // Sauvegarder le planning comme dernier planning utilisé avant de quitter
         return () => {
             saveToLocalStorage(`lastPlanning_${selectedShop}`, {
                 week: selectedWeek,
@@ -190,7 +191,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setPlanning(() => {
             const updatedPlanning = {};
             if (resetEmployee === 'all') {
-                // Réinitialiser tout le planning
                 selectedEmployees.forEach(employee => {
                     updatedPlanning[employee] = {};
                     for (let i = 0; i < 7; i++) {
@@ -201,7 +201,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 console.log('Reset full planning:', updatedPlanning);
                 setFeedback('Planning complet réinitialisé.');
             } else {
-                // Réinitialiser un employé spécifique
                 selectedEmployees.forEach(employee => {
                     updatedPlanning[employee] = employee === resetEmployee ? {} : (planning[employee] || {});
                     if (employee === resetEmployee) {
@@ -242,6 +241,63 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const [hours, minutes] = startTime.split(':').map(Number);
         const date = new Date(2025, 0, 1, hours, minutes);
         return format(addMinutes(date, interval), 'HH:mm');
+    };
+
+    // Récupérer les semaines du mois pour le récapitulatif mensuel
+    const getMonthlyWeeks = () => {
+        const monthStart = startOfMonth(new Date(selectedWeek));
+        const monthEnd = endOfMonth(new Date(selectedWeek));
+        const weeks = [];
+        let currentWeek = monthStart;
+
+        while (currentWeek <= monthEnd) {
+            const weekKey = format(currentWeek, 'yyyy-MM-dd');
+            const weekPlanning = loadFromLocalStorage(`planning_${selectedShop}_${weekKey}`);
+            if (weekPlanning) {
+                weeks.push({ weekStart: weekKey, planning: weekPlanning });
+            }
+            currentWeek = addDays(currentWeek, 7);
+        }
+
+        return weeks;
+    };
+
+    // Générer les données du récapitulatif mensuel pour un employé
+    const getMonthlyRecapData = (employee) => {
+        const weeks = getMonthlyWeeks();
+        const recapData = [];
+
+        weeks.forEach(({ weekStart, planning }, weekIndex) => {
+            for (let i = 0; i < 7; i++) {
+                const dayKey = format(addDays(new Date(weekStart), i), 'yyyy-MM-dd');
+                const slots = planning[employee]?.[dayKey] || [];
+                let start = null, end = null, breakStart = null, breakEnd = null;
+
+                for (let j = 0; j < slots.length; j++) {
+                    if (slots[j]) {
+                        if (!start) start = config.timeSlots[j];
+                        end = config.timeSlots[j];
+                    } else if (start && !breakStart) {
+                        breakStart = config.timeSlots[j];
+                    } else if (breakStart && !breakEnd && slots[j]) {
+                        breakEnd = config.timeSlots[j - 1];
+                        break;
+                    }
+                }
+
+                const hours = (slots.filter(slot => slot).length * config.interval) / 60;
+                recapData.push({
+                    day: format(addDays(new Date(weekStart), i), 'd MMMM yyyy', { locale: fr }),
+                    start: start || '-',
+                    end: end ? getEndTime(end, config.interval) : '-',
+                    breakStart: breakStart || '-',
+                    breakEnd: breakEnd ? getEndTime(breakEnd, config.interval) : '-',
+                    hours: hours.toFixed(1)
+                });
+            }
+        });
+
+        return recapData;
     };
 
     console.log('Rendering PlanningDisplay, showRecapModal:', showRecapModal);
@@ -297,6 +353,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 ))}
                 <Button className="button-base button-recap" onClick={() => setShowRecapModal('week')}>
                     Récapitulatif semaine
+                </Button>
+                <Button className="button-base button-recap" onClick={() => setShowMonthlyRecapModal(true)}>
+                    Récapitulatif mensuel
                 </Button>
             </div>
             <div className="table-container">
@@ -491,6 +550,81 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     selectedEmployees={selectedEmployees}
                     onClose={() => setShowRecapModal(null)}
                 />
+            )}
+            {showMonthlyRecapModal && (
+                <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                    <div className="modal-content">
+                        <button
+                            className="modal-close"
+                            onClick={() => {
+                                setShowMonthlyRecapModal(false);
+                                setSelectedMonthlyEmployee('');
+                            }}
+                            style={{ color: '#dc3545', fontSize: '18px' }}
+                        >
+                            ✕
+                        </button>
+                        <h3 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                            Récapitulatif mensuel
+                        </h3>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
+                            Mois de {format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr })}
+                        </p>
+                        <div className="form-group" style={{ marginBottom: '15px' }}>
+                            <label style={{ fontFamily: 'Roboto, sans-serif' }}>Employé</label>
+                            <select
+                                value={selectedMonthlyEmployee}
+                                onChange={(e) => setSelectedMonthlyEmployee(e.target.value)}
+                                style={{ width: '200px', fontFamily: 'Roboto, sans-serif' }}
+                            >
+                                <option value="">Choisir un employé</option>
+                                {selectedEmployees.map(employee => (
+                                    <option key={employee} value={employee}>{employee}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {selectedMonthlyEmployee && (
+                            <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Jour</th>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Arrivée</th>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Sortie</th>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Retour</th>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Fin</th>
+                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Heures effectives</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getMonthlyRecapData(selectedMonthlyEmployee).map((row, index) => (
+                                        <tr key={index} style={{ backgroundColor: pastelColors[index % pastelColors.length], marginBottom: '10px' }}>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.day}</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.start}</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakStart}</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakEnd}</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.end}</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.hours} h</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                        <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
+                            Klick-Planning - copyright © Nicolas Lefevre
+                        </p>
+                        <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                            <Button
+                                className="button-base button-retour"
+                                onClick={() => {
+                                    setShowMonthlyRecapModal(false);
+                                    setSelectedMonthlyEmployee('');
+                                }}
+                            >
+                                Fermer
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

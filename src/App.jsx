@@ -25,6 +25,7 @@ const App = () => {
     }, [selectedShop, selectedEmployees, selectedWeek, planning]);
 
     const handleNext = (data) => {
+        console.log('handleNext called with data:', data);
         if (step === 1) setConfig(data);
         if (step === 2) setSelectedShop(data);
         if (step === 3) {

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, addMinutes, startOfMonth, endOfMonth } from 'date-fns';
+import { format, addDays, addMinutes, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
@@ -40,7 +40,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 updatedPlanning[employee] = {};
                 for (let i = 0; i < 7; i++) {
                     const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                    // Vérifier si des données existent et sont compatibles avec la nouvelle configuration
                     const existingSlots = prev[employee]?.[dayKey];
                     if (existingSlots && existingSlots.length === config.timeSlots.length) {
                         updatedPlanning[employee][dayKey] = [...existingSlots];
@@ -245,17 +244,27 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const monthStart = startOfMonth(new Date(selectedWeek));
         const monthEnd = endOfMonth(new Date(selectedWeek));
         const weeks = [];
-        let currentWeek = monthStart;
 
-        while (currentWeek <= monthEnd) {
-            const weekKey = format(currentWeek, 'yyyy-MM-dd');
-            const weekPlanning = loadFromLocalStorage(`planning_${selectedShop}_${weekKey}`);
-            if (weekPlanning) {
-                weeks.push({ weekStart: weekKey, planning: weekPlanning });
+        // Récupérer toutes les clés de localStorage commençant par planning_${selectedShop}_
+        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
+        console.log('Storage keys found:', storageKeys);
+
+        storageKeys.forEach(key => {
+            const weekKey = key.replace(`planning_${selectedShop}_`, '');
+            try {
+                const weekDate = new Date(weekKey);
+                if (isWithinInterval(weekDate, { start: monthStart, end: monthEnd })) {
+                    const weekPlanning = loadFromLocalStorage(key);
+                    if (weekPlanning) {
+                        weeks.push({ weekStart: weekKey, planning: weekPlanning });
+                    }
+                }
+            } catch (e) {
+                console.error(`Invalid date format for key ${key}:`, e);
             }
-            currentWeek = addDays(currentWeek, 7);
-        }
+        });
 
+        console.log('Weeks found for month:', weeks);
         return weeks;
     };
 
@@ -263,11 +272,29 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const weeks = getMonthlyWeeks();
         const recapData = [];
 
+        if (weeks.length === 0) {
+            console.log('No weeks found for recap:', { employee, month: format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr }) });
+            return recapData;
+        }
+
         weeks.forEach(({ weekStart, planning }, weekIndex) => {
             for (let i = 0; i < 7; i++) {
                 const dayKey = format(addDays(new Date(weekStart), i), 'yyyy-MM-dd');
                 const slots = planning[employee]?.[dayKey] || [];
                 let start = null, end = null, breakStart = null, breakEnd = null;
+
+                if (!planning[employee] || !planning[employee][dayKey]) {
+                    console.log(`No data for employee ${employee} on ${dayKey}`);
+                    recapData.push({
+                        day: format(addDays(new Date(weekStart), i), 'd MMMM yyyy', { locale: fr }),
+                        start: '-',
+                        end: '-',
+                        breakStart: '-',
+                        breakEnd: '-',
+                        hours: '0.0'
+                    });
+                    continue;
+                }
 
                 for (let j = 0; j < slots.length; j++) {
                     if (slots[j]) {
@@ -293,6 +320,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             }
         });
 
+        console.log('Monthly recap data for employee:', { employee, recapData });
         return recapData;
     };
 
@@ -580,30 +608,38 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             </select>
                         </div>
                         {selectedMonthlyEmployee && (
-                            <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ backgroundColor: '#f0f0f0' }}>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Jour</th>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Arrivée</th>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Sortie</th>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Retour</th>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Fin</th>
-                                        <th style={{ border: '1px solid #ddd', padding: '8px' }}>Heures effectives</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {getMonthlyRecapData(selectedMonthlyEmployee).map((row, index) => (
-                                        <tr key={index} style={{ backgroundColor: pastelColors[index % pastelColors.length], marginBottom: '10px' }}>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.day}</td>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.start}</td>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakStart}</td>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakEnd}</td>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.end}</td>
-                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.hours} h</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <>
+                                {getMonthlyRecapData(selectedMonthlyEmployee).length === 0 ? (
+                                    <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
+                                        Aucune donnée disponible pour ce mois.
+                                    </p>
+                                ) : (
+                                    <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Jour</th>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Arrivée</th>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Sortie</th>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Retour</th>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Fin</th>
+                                                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Heures effectives</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {getMonthlyRecapData(selectedMonthlyEmployee).map((row, index) => (
+                                                <tr key={index} style={{ backgroundColor: pastelColors[index % pastelColors.length], marginBottom: '10px' }}>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.day}</td>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.start}</td>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakStart}</td>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.breakEnd}</td>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.end}</td>
+                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.hours} h</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </>
                         )}
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
                             Klick-Planning - copyright © Nicolas Lefevre

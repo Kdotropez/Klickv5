@@ -80,13 +80,26 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                     <label style={{ fontFamily: 'Roboto, sans-serif' }}>Intervalle (minutes)</label>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                         {intervals.map((int) => (
-                            <label key={int} style={{ fontFamily: 'Roboto, sans-serif' }}>
+                            <label
+                                key={int}
+                                style={{
+                                    fontFamily: 'Roboto, sans-serif',
+                                    border: '1px solid #d6e6ff',
+                                    backgroundColor: interval === int ? '#e0e0e0' : '#f0f0f0',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = interval === int ? '#e0e0e0' : '#f0f0f0'}
+                            >
                                 <input
                                     type="radio"
                                     name="interval"
                                     value={int}
                                     checked={interval === int}
                                     onChange={(e) => setInterval(Number(e.target.value))}
+                                    style={{ marginRight: '4px' }}
                                 />
                                 {int} min
                             </label>
@@ -97,13 +110,26 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                     <label style={{ fontFamily: 'Roboto, sans-serif' }}>Heure de début</label>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         {startTimes.map((time) => (
-                            <label key={time} style={{ fontFamily: 'Roboto, sans-serif' }}>
+                            <label
+                                key={time}
+                                style={{
+                                    fontFamily: 'Roboto, sans-serif',
+                                    border: '1px solid #d6e6ff',
+                                    backgroundColor: startTime === time ? '#e0e0e0' : '#f0f0f0',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = startTime === time ? '#e0e0e0' : '#f0f0f0'}
+                            >
                                 <input
                                     type="radio"
                                     name="startTime"
                                     value={time}
                                     checked={startTime === time}
                                     onChange={(e) => setStartTime(e.target.value)}
+                                    style={{ marginRight: '4px' }}
                                 />
                                 {time === 'other' ? 'Autre' : time}
                             </label>
@@ -122,13 +148,26 @@ const TimeSlotConfig = ({ onNext, onReset, config }) => {
                     <label style={{ fontFamily: 'Roboto, sans-serif' }}>Heure de fin</label>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         {endTimes.map((time) => (
-                            <label key={time} style={{ fontFamily: 'Roboto, sans-serif' }}>
+                            <label
+                                key={time}
+                                style={{
+                                    fontFamily: 'Roboto, sans-serif',
+                                    border: '1px solid #d6e6ff',
+                                    backgroundColor: endTime === time ? '#e0e0e0' : '#f0f0f0',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = endTime === time ? '#e0e0e0' : '#f0f0f0'}
+                            >
                                 <input
                                     type="radio"
                                     name="endTime"
                                     value={time}
                                     checked={endTime === time}
                                     onChange={(e) => setEndTime(e.target.value)}
+                                    style={{ marginRight: '4px' }}
                                 />
                                 {time === 'other' ? 'Autre' : time}
                             </label>

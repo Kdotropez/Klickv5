@@ -442,85 +442,44 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </Button>
                 ))}
             </div>
-            <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '20px', marginBottom: '15px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
-                    {selectedEmployees[0] && (
-                        <>
-                            <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
-                                RECAP {selectedEmployees[0]}
-                            </h4>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => setShowRecapModal(selectedEmployees[0])}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                JOUR ({calculateEmployeeDailyHours(selectedEmployees[0], format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
-                            </Button>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => setShowRecapModal(selectedEmployees[0] + '_week')}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                SEMAINE ({calculateEmployeeWeeklyHours(selectedEmployees[0], selectedWeek, planning).toFixed(1)} h)
-                            </Button>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => {
-                                    setSelectedEmployeeForMonthlyRecap(selectedEmployees[0]);
-                                    setShowEmployeeMonthlyRecap(true);
-                                }}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                MOIS ({getEmployeeMonthlyRecapData(selectedEmployees[0]).monthlyTotal.toFixed(1)} h)
-                            </Button>
-                        </>
-                    )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
-                    {selectedEmployees[1] && (
-                        <>
-                            <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
-                                RECAP {selectedEmployees[1]}
-                            </h4>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => setShowRecapModal(selectedEmployees[1])}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                JOUR ({calculateEmployeeDailyHours(selectedEmployees[1], format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
-                            </Button>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => setShowRecapModal(selectedEmployees[1] + '_week')}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                SEMAINE ({calculateEmployeeWeeklyHours(selectedEmployees[1], selectedWeek, planning).toFixed(1)} h)
-                            </Button>
-                            <Button
-                                className="button-base button-recap"
-                                onClick={() => {
-                                    setSelectedEmployeeForMonthlyRecap(selectedEmployees[1]);
-                                    setShowEmployeeMonthlyRecap(true);
-                                }}
-                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                            >
-                                MOIS ({getEmployeeMonthlyRecapData(selectedEmployees[1]).monthlyTotal.toFixed(1)} h)
-                            </Button>
-                        </>
-                    )}
-                </div>
+            <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', justifyContent: 'center', gap: '20px', marginBottom: '15px' }}>
+                {selectedEmployees.map((employee, index) => (
+                    <div key={employee} style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
+                        <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                            RECAP {employee}
+                        </h4>
+                        <Button
+                            className="button-base button-recap"
+                            onClick={() => setShowRecapModal(employee)}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                        >
+                            JOUR ({calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
+                        </Button>
+                        <Button
+                            className="button-base button-recap"
+                            onClick={() => setShowRecapModal(employee + '_week')}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                        >
+                            SEMAINE ({calculateEmployeeWeeklyHours(employee, selectedWeek, planning).toFixed(1)} h)
+                        </Button>
+                        <Button
+                            className="button-base button-recap"
+                            onClick={() => {
+                                setSelectedEmployeeForMonthlyRecap(employee);
+                                setShowEmployeeMonthlyRecap(true);
+                            }}
+                            style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                        >
+                            MOIS ({getEmployeeMonthlyRecapData(employee).monthlyTotal.toFixed(1)} h)
+                        </Button>
+                    </div>
+                ))}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
                     <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
                         PLANNING

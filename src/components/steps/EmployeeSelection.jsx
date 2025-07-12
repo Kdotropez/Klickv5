@@ -93,11 +93,11 @@ const EmployeeSelection = ({ selectedShop, onNext, onBack, onReset }) => {
                             className={`employee-button ${selectedEmployees.includes(employee) ? 'selected' : ''}`}
                             onClick={() => handleToggleEmployee(employee)}
                             style={{
-                                backgroundColor: selectedEmployees.includes(employee) ? '#ffe0b2' : '#ff9800',
+                                backgroundColor: selectedEmployees.includes(employee) ? '#ffe0b2' : '#bdbdbd',
                                 color: '#333',
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffcc80' : '#f57c00'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffe0b2' : '#ff9800'}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffcc80' : '#9e9e9e'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = selectedEmployees.includes(employee) ? '#ffe0b2' : '#bdbdbd'}
                         >
                             {employee}
                             <FaTimes

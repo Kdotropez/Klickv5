@@ -16,11 +16,14 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     const [targetDays, setTargetDays] = useState([]);
     const [sourceEmployee, setSourceEmployee] = useState('');
     const [targetEmployee, setTargetEmployee] = useState('');
+    const [sourceWeek, setSourceWeek] = useState('');
     const [feedback, setFeedback] = useState('');
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetEmployee, setResetEmployee] = useState('');
     const [showRecapModal, setShowRecapModal] = useState(null);
     const [showMonthlyRecapModal, setShowMonthlyRecapModal] = useState(false);
+    const [showEmployeeMonthlyRecap, setShowEmployeeMonthlyRecap] = useState(false);
+    const [selectedEmployeeForMonthlyRecap, setSelectedEmployeeForMonthlyRecap] = useState('');
 
     const pastelColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#d6e6ff'];
 
@@ -36,35 +39,39 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setPlanning(prev => {
             const updatedPlanning = {};
             selectedEmployees.forEach(employee => {
-                updatedPlanning[employee] = {};
+                updatedPlanning[employee] = prev[employee] || {};
                 for (let i = 0; i < 7; i++) {
                     const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
-                    const existingSlots = prev[employee]?.[dayKey];
-                    if (existingSlots && existingSlots.length === config.timeSlots.length) {
-                        updatedPlanning[employee][dayKey] = [...existingSlots];
-                    } else {
-                        updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
-                    }
+                    updatedPlanning[employee][dayKey] = prev[employee]?.[dayKey] && prev[employee][dayKey].length === config.timeSlots.length
+                        ? [...prev[employee][dayKey]]
+                        : Array(config.timeSlots.length).fill(false);
                 }
             });
-            console.log('Synchronized planning with new config:', { config, updatedPlanning });
-            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+            console.log('Synchronized planning with new config:', { config, updatedPlanning, selectedEmployees });
+            if (Object.keys(updatedPlanning).length > 0) {
+                saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+                console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${selectedWeek}`, planning: updatedPlanning });
+            }
             return updatedPlanning;
         });
     }, [selectedEmployees, selectedWeek, config]);
 
     useEffect(() => {
-        saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
-        console.log('Saved planning to localStorage:', planning);
+        if (Object.keys(planning).length > 0) {
+            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
+            console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${selectedWeek}`, planning });
+        }
     }, [planning, selectedShop, selectedWeek]);
 
     useEffect(() => {
         return () => {
-            saveToLocalStorage(`lastPlanning_${selectedShop}`, {
-                week: selectedWeek,
-                planning: planning
-            });
-            console.log('Saved last planning:', { week: selectedWeek, planning });
+            if (Object.keys(planning).length > 0) {
+                saveToLocalStorage(`lastPlanning_${selectedShop}`, {
+                    week: selectedWeek,
+                    planning: planning
+                });
+                console.log('Saved last planning:', { week: selectedWeek, planning });
+            }
         };
     }, [planning, selectedShop, selectedWeek]);
 
@@ -222,14 +229,53 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setResetEmployee('');
     };
 
+    const getAvailableWeeks = () => {
+        const weeks = [];
+        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
+        console.log('Available storage keys:', storageKeys);
+
+        storageKeys.forEach(key => {
+            const weekKey = key.replace(`planning_${selectedShop}_`, '');
+            try {
+                const weekDate = new Date(weekKey);
+                if (isMonday(weekDate)) {
+                    const weekPlanning = loadFromLocalStorage(key);
+                    if (weekPlanning && Object.keys(weekPlanning).length > 0) {
+                        weeks.push({
+                            key: weekKey,
+                            date: weekDate,
+                            display: `Semaine du ${format(weekDate, 'd MMMM yyyy', { locale: fr })}`
+                        });
+                        console.log(`Week data for ${key}:`, weekPlanning);
+                    }
+                }
+            } catch (e) {
+                console.error(`Invalid date format for key ${key}:`, e);
+            }
+        });
+
+        weeks.sort((a, b) => a.date - b.date);
+        console.log('Available weeks:', weeks);
+        return weeks;
+    };
+
     const copyWeek = () => {
-        saveToLocalStorage(`week_${selectedShop}_${selectedWeek}`, planning);
-        setFeedback('Semaine copiée.');
+        if (!sourceWeek) {
+            setFeedback('Veuillez sélectionner une semaine source.');
+            return;
+        }
+        const weekPlanning = loadFromLocalStorage(`planning_${selectedShop}_${sourceWeek}`);
+        if (weekPlanning && Object.keys(weekPlanning).length > 0) {
+            saveToLocalStorage(`week_${selectedShop}_${selectedWeek}`, weekPlanning);
+            setFeedback(`Semaine du ${format(new Date(sourceWeek), 'd MMMM yyyy', { locale: fr })} copiée.`);
+        } else {
+            setFeedback('Aucune donnée disponible pour la semaine sélectionnée.');
+        }
     };
 
     const pasteWeek = () => {
         const copiedWeek = loadFromLocalStorage(`week_${selectedShop}_${selectedWeek}`);
-        if (copiedWeek) {
+        if (copiedWeek && Object.keys(copiedWeek).length > 0) {
             setPlanning(copiedWeek);
             saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, copiedWeek);
             setFeedback('Semaine collée.');
@@ -251,7 +297,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         const weeks = [];
 
         const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
-        console.log('Storage keys found:', storageKeys);
+        console.log('Storage keys found for monthly recap:', storageKeys);
 
         storageKeys.forEach(key => {
             const weekKey = key.replace(`planning_${selectedShop}_`, '');
@@ -261,6 +307,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     const weekPlanning = loadFromLocalStorage(key);
                     if (weekPlanning && Object.keys(weekPlanning).length > 0) {
                         weeks.push({ weekStart: weekKey, planning: weekPlanning });
+                        console.log(`Week data for ${key}:`, weekPlanning);
                     }
                 }
             } catch (e) {
@@ -268,7 +315,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             }
         });
 
-        weeks.sort((a, b) => new Date(a.weekStart) - new Date(b.weekStart));
+        weeks.sort((a, b) => a.date - b.date);
         console.log('Sorted weeks found for month:', weeks);
         return weeks;
     };
@@ -322,6 +369,38 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         return { monthlyTotals, weeklyRecaps };
     };
 
+    const getEmployeeMonthlyRecapData = (employee) => {
+        const weeks = getMonthlyWeeks();
+        const weeklyRecaps = [];
+        let monthlyTotal = 0;
+
+        if (weeks.length === 0) {
+            console.log(`No weeks found for employee ${employee} monthly recap`);
+            return { monthlyTotal: 0, weeklyRecaps };
+        }
+
+        weeks.forEach(({ weekStart, planning }) => {
+            if (!planning[employee]) {
+                console.log(`No data for employee ${employee} in week ${weekStart}`);
+                weeklyRecaps.push({
+                    week: `Semaine du ${format(new Date(weekStart), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(weekStart), 6), 'd MMMM yyyy', { locale: fr })}`,
+                    hours: '0.0'
+                });
+                return;
+            }
+
+            const weekTotalHours = calculateEmployeeWeeklyHours(employee, weekStart, planning);
+            monthlyTotal += weekTotalHours;
+            weeklyRecaps.push({
+                week: `Semaine du ${format(new Date(weekStart), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(weekStart), 6), 'd MMMM yyyy', { locale: fr })}`,
+                hours: weekTotalHours.toFixed(1)
+            });
+        });
+
+        console.log(`Employee monthly recap data for ${employee}:`, { monthlyTotal, weeklyRecaps });
+        return { monthlyTotal, weeklyRecaps };
+    };
+
     console.log('Rendering PlanningDisplay, showRecapModal:', showRecapModal);
 
     return (
@@ -363,22 +442,108 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     </Button>
                 ))}
             </div>
-            <div className="recap-buttons">
-                {selectedEmployees.map(employee => (
+            <div className="recap-buttons" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '20px', marginBottom: '15px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
+                    {selectedEmployees[0] && (
+                        <>
+                            <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                                RECAP {selectedEmployees[0]}
+                            </h4>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => setShowRecapModal(selectedEmployees[0])}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                JOUR ({calculateEmployeeDailyHours(selectedEmployees[0], format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
+                            </Button>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => setShowRecapModal(selectedEmployees[0] + '_week')}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                SEMAINE ({calculateEmployeeWeeklyHours(selectedEmployees[0], selectedWeek, planning).toFixed(1)} h)
+                            </Button>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => {
+                                    setSelectedEmployeeForMonthlyRecap(selectedEmployees[0]);
+                                    setShowEmployeeMonthlyRecap(true);
+                                }}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                MOIS ({getEmployeeMonthlyRecapData(selectedEmployees[0]).monthlyTotal.toFixed(1)} h)
+                            </Button>
+                        </>
+                    )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
+                    {selectedEmployees[1] && (
+                        <>
+                            <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                                RECAP {selectedEmployees[1]}
+                            </h4>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => setShowRecapModal(selectedEmployees[1])}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                JOUR ({calculateEmployeeDailyHours(selectedEmployees[1], format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
+                            </Button>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => setShowRecapModal(selectedEmployees[1] + '_week')}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                SEMAINE ({calculateEmployeeWeeklyHours(selectedEmployees[1], selectedWeek, planning).toFixed(1)} h)
+                            </Button>
+                            <Button
+                                className="button-base button-recap"
+                                onClick={() => {
+                                    setSelectedEmployeeForMonthlyRecap(selectedEmployees[1]);
+                                    setShowEmployeeMonthlyRecap(true);
+                                }}
+                                style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                            >
+                                MOIS ({getEmployeeMonthlyRecapData(selectedEmployees[1]).monthlyTotal.toFixed(1)} h)
+                            </Button>
+                        </>
+                    )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '200px', alignItems: 'center' }}>
+                    <h4 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '8px' }}>
+                        PLANNING
+                    </h4>
                     <Button
-                        key={employee}
                         className="button-base button-recap"
-                        onClick={() => setShowRecapModal(employee)}
+                        onClick={() => setShowRecapModal('week')}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
-                        Recap {employee}: {calculateEmployeeWeeklyHours(employee, selectedWeek, planning).toFixed(1)} h
+                        PLANNING SEMAINE
                     </Button>
-                ))}
-                <Button className="button-base button-recap" onClick={() => setShowRecapModal('week')}>
-                    Récapitulatif semaine
-                </Button>
-                <Button className="button-base button-recap" onClick={() => setShowMonthlyRecapModal(true)}>
-                    Récapitulatif mensuel
-                </Button>
+                    <Button
+                        className="button-base button-recap"
+                        onClick={() => setShowMonthlyRecapModal(true)}
+                        style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px', width: '200px' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
+                    >
+                        PLANNING MENSUEL
+                    </Button>
+                </div>
             </div>
             <div className="table-container">
                 <table className="planning-table">
@@ -512,9 +677,18 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         <h3>Copier/Coller une semaine existante</h3>
                         <div className="form-group">
                             <label>Semaine source</label>
-                            <select>
-                                <option value="">Choisir une semaine</option>
-                            </select>
+                            {getAvailableWeeks().length === 0 ? (
+                                <p style={{ fontFamily: 'Roboto, sans-serif', color: '#e53935' }}>
+                                    Aucune semaine disponible pour la copie.
+                                </p>
+                            ) : (
+                                <select value={sourceWeek} onChange={(e) => setSourceWeek(e.target.value)}>
+                                    <option value="">Choisir une semaine</option>
+                                    {getAvailableWeeks().map(week => (
+                                        <option key={week.key} value={week.key}>{week.display}</option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
                         <div className="button-group">
                             <Button className="button-base button-primary" onClick={copyWeek}>
@@ -562,8 +736,8 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             )}
             {typeof showRecapModal !== 'undefined' && showRecapModal && (
                 <RecapModal
-                    type={showRecapModal === 'week' ? 'week' : 'employee'}
-                    employee={showRecapModal !== 'week' ? showRecapModal : null}
+                    type={showRecapModal.includes('_week') ? 'employee' : showRecapModal === 'week' ? 'week' : 'employee'}
+                    employee={showRecapModal.includes('_week') ? showRecapModal.replace('_week', '') : showRecapModal !== 'week' ? showRecapModal : null}
                     shop={selectedShop}
                     days={days}
                     config={config}
@@ -635,6 +809,74 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             <Button
                                 className="button-base button-retour"
                                 onClick={() => setShowMonthlyRecapModal(false)}
+                            >
+                                Fermer
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showEmployeeMonthlyRecap && (
+                <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                    <div className="modal-content">
+                        <button
+                            className="modal-close"
+                            onClick={() => {
+                                setShowEmployeeMonthlyRecap(false);
+                                setSelectedEmployeeForMonthlyRecap('');
+                            }}
+                            style={{ color: '#dc3545', fontSize: '18px' }}
+                        >
+                            ✕
+                        </button>
+                        <h3 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                            Récapitulatif mensuel - {selectedEmployeeForMonthlyRecap}
+                        </h3>
+                        <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
+                            Mois de {format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr })}
+                        </p>
+                        {(() => {
+                            const { monthlyTotal, weeklyRecaps } = getEmployeeMonthlyRecapData(selectedEmployeeForMonthlyRecap);
+                            if (weeklyRecaps.length === 0 || weeklyRecaps.every(recap => recap.hours === '0.0')) {
+                                return (
+                                    <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
+                                        Aucune donnée disponible pour ce mois.
+                                    </p>
+                                );
+                            }
+                            return (
+                                <table style={{ fontFamily: 'Inter, sans-serif', width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Semaine</th>
+                                            <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: '700' }}>Total semaine (h)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {weeklyRecaps.map((recap, index) => (
+                                            <tr key={index} style={{ backgroundColor: pastelColors[index % pastelColors.length] }}>
+                                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recap.week}</td>
+                                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{recap.hours}</td>
+                                            </tr>
+                                        ))}
+                                        <tr style={{ backgroundColor: '#f0f0f0', fontWeight: '700' }}>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>Total mois</td>
+                                            <td style={{ border: '1px solid #ddd', padding: '8px' }}>{monthlyTotal.toFixed(1)} h</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            );
+                        })()}
+                        <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
+                            Klick-Planning - copyright © Nicolas Lefevre
+                        </p>
+                        <div className="button-group" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                            <Button
+                                className="button-base button-retour"
+                                onClick={() => {
+                                    setShowEmployeeMonthlyRecap(false);
+                                    setSelectedEmployeeForMonthlyRecap('');
+                                }}
                             >
                                 Fermer
                             </Button>

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, addMinutes, startOfMonth, endOfMonth, isWithinInterval, isMonday } from 'date-fns';
+import { format, addDays, addMinutes, startOfMonth, endOfMonth, isWithinInterval, isMonday, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FaCopy, FaPaste, FaToggleOn } from 'react-icons/fa';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
@@ -27,8 +27,11 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     const pastelColors = ['#e6f0fa', '#e6ffed', '#ffe6e6', '#d0f0fa', '#f0e6fa', '#fffde6', '#d6e6ff'];
 
+    // Valider selectedWeek et utiliser une date par défaut si invalide
+    const validWeek = selectedWeek && !isNaN(new Date(selectedWeek).getTime()) ? selectedWeek : format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
     const days = Array.from({ length: 7 }, (_, i) => {
-        const date = addDays(new Date(selectedWeek), i);
+        const date = addDays(new Date(validWeek), i);
         return {
             name: format(date, 'EEEE', { locale: fr }),
             date: format(date, 'd MMMM', { locale: fr }),
@@ -44,7 +47,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             selectedEmployees.forEach(employee => {
                 updatedPlanning[employee] = prev[employee] || {};
                 for (let i = 0; i < 7; i++) {
-                    const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                    const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
                     updatedPlanning[employee][dayKey] = prev[employee]?.[dayKey] && prev[employee][dayKey].length === config.timeSlots.length
                         ? [...prev[employee][dayKey]]
                         : Array(config.timeSlots.length).fill(false);
@@ -52,34 +55,34 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
             });
             console.log('Synchronized planning with new config:', { config, updatedPlanning, selectedEmployees });
             if (Object.keys(updatedPlanning).length > 0) {
-                saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
-                console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${selectedWeek}`, planning: updatedPlanning });
+                saveToLocalStorage(`planning_${selectedShop}_${validWeek}`, updatedPlanning);
+                console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${validWeek}`, planning: updatedPlanning });
             }
             return updatedPlanning;
         });
-    }, [selectedEmployees, selectedWeek, config]);
+    }, [selectedEmployees, validWeek, config]);
 
     useEffect(() => {
         if (Object.keys(planning).length > 0) {
-            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
-            console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${selectedWeek}`, planning });
+            saveToLocalStorage(`planning_${selectedShop}_${validWeek}`, planning);
+            console.log('Saved planning to localStorage:', { key: `planning_${selectedShop}_${validWeek}`, planning });
         }
-    }, [planning, selectedShop, selectedWeek]);
+    }, [planning, selectedShop, validWeek]);
 
     useEffect(() => {
         return () => {
             if (Object.keys(planning).length > 0) {
                 saveToLocalStorage(`lastPlanning_${selectedShop}`, {
-                    week: selectedWeek,
+                    week: validWeek,
                     planning: planning
                 });
-                console.log('Saved last planning:', { week: selectedWeek, planning });
+                console.log('Saved last planning:', { week: validWeek, planning });
             }
         };
-    }, [planning, selectedShop, selectedWeek]);
+    }, [planning, selectedShop, validWeek]);
 
     const calculateDailyHours = (dayIndex) => {
-        const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+        const dayKey = format(addDays(new Date(validWeek), dayIndex), 'yyyy-MM-dd');
         let totalHours = 0;
         selectedEmployees.forEach(employee => {
             const slots = planning[employee]?.[dayKey] || [];
@@ -109,7 +112,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         console.log('toggleSlot called:', { employee, slotIndex, dayIndex, planning });
         setPlanning(prev => {
             const updatedPlanning = JSON.parse(JSON.stringify(prev));
-            const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+            const dayKey = format(addDays(new Date(validWeek), dayIndex), 'yyyy-MM-dd');
             if (!updatedPlanning[employee]) {
                 updatedPlanning[employee] = {};
             }
@@ -123,13 +126,13 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const copyDay = () => {
-        const dayKey = format(addDays(new Date(selectedWeek), sourceDay), 'yyyy-MM-dd');
+        const dayKey = format(addDays(new Date(validWeek), sourceDay), 'yyyy-MM-dd');
         if (copyMode === 'all') {
             const copiedData = selectedEmployees.reduce((acc, employee) => {
                 acc[employee] = planning[employee]?.[dayKey] || Array(config.timeSlots.length).fill(false);
                 return acc;
             }, {});
-            saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'all', data: copiedData });
+            saveToLocalStorage(`copied_${selectedShop}_${validWeek}`, { mode: 'all', data: copiedData });
             setFeedback(`Données copiées pour ${days[sourceDay].name}`);
         } else if (copyMode === 'individual') {
             if (!sourceEmployee) {
@@ -137,7 +140,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 return;
             }
             const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false) };
-            saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'individual', data: copiedData });
+            saveToLocalStorage(`copied_${selectedShop}_${validWeek}`, { mode: 'individual', data: copiedData });
             setFeedback(`Données copiées pour ${sourceEmployee} le ${days[sourceDay].name}`);
         } else if (copyMode === 'employeeToEmployee') {
             if (!sourceEmployee || !targetEmployee) {
@@ -145,13 +148,13 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 return;
             }
             const copiedData = { [sourceEmployee]: planning[sourceEmployee]?.[dayKey] || Array(config.timeSlots.length).fill(false), targetEmployee };
-            saveToLocalStorage(`copied_${selectedShop}_${selectedWeek}`, { mode: 'employeeToEmployee', data: copiedData });
+            saveToLocalStorage(`copied_${selectedShop}_${validWeek}`, { mode: 'employeeToEmployee', data: copiedData });
             setFeedback(`Données copiées de ${sourceEmployee} vers ${targetEmployee} pour ${days[sourceDay].name}`);
         }
     };
 
     const pasteDay = () => {
-        const copied = loadFromLocalStorage(`copied_${selectedShop}_${selectedWeek}`);
+        const copied = loadFromLocalStorage(`copied_${selectedShop}_${validWeek}`);
         if (!copied || !copied.data) {
             setFeedback('Aucune donnée copiée.');
             return;
@@ -159,7 +162,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         setPlanning(prev => {
             const updatedPlanning = JSON.parse(JSON.stringify(prev));
             targetDays.forEach(dayIndex => {
-                const dayKey = format(addDays(new Date(selectedWeek), dayIndex), 'yyyy-MM-dd');
+                const dayKey = format(addDays(new Date(validWeek), dayIndex), 'yyyy-MM-dd');
                 if (copied.mode === 'all') {
                     Object.keys(copied.data).forEach(employee => {
                         if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
@@ -169,7 +172,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     const employee = Object.keys(copied.data)[0];
                     if (!updatedPlanning[employee]) updatedPlanning[employee] = {};
                     updatedPlanning[employee][dayKey] = [...copied.data[employee]];
-                } else if (copied.mode === 'employeeToEmployee') {
+                } else if (copyMode === 'employeeToEmployee') {
                     const employee = Object.keys(copied.data)[0];
                     const target = copied.data.targetEmployee;
                     if (!updatedPlanning[target]) updatedPlanning[target] = {};
@@ -206,7 +209,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 selectedEmployees.forEach(employee => {
                     updatedPlanning[employee] = {};
                     for (let i = 0; i < 7; i++) {
-                        const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                        const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
                         updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
                     }
                 });
@@ -217,7 +220,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     updatedPlanning[employee] = employee === resetEmployee ? {} : (planning[employee] || {});
                     if (employee === resetEmployee) {
                         for (let i = 0; i < 7; i++) {
-                            const dayKey = format(addDays(new Date(selectedWeek), i), 'yyyy-MM-dd');
+                            const dayKey = format(addDays(new Date(validWeek), i), 'yyyy-MM-dd');
                             updatedPlanning[employee][dayKey] = Array(config.timeSlots.length).fill(false);
                         }
                     }
@@ -225,7 +228,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 console.log('Reset planning for employee:', { employee: resetEmployee, updatedPlanning });
                 setFeedback(`Planning réinitialisé pour ${resetEmployee}.`);
             }
-            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, updatedPlanning);
+            saveToLocalStorage(`planning_${selectedShop}_${validWeek}`, updatedPlanning);
             return updatedPlanning;
         });
         setShowResetModal(false);
@@ -269,7 +272,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
         }
         const weekPlanning = loadFromLocalStorage(`planning_${selectedShop}_${sourceWeek}`);
         if (weekPlanning && Object.keys(weekPlanning).length > 0) {
-            saveToLocalStorage(`week_${selectedShop}_${selectedWeek}`, weekPlanning);
+            saveToLocalStorage(`week_${selectedShop}_${validWeek}`, weekPlanning);
             setFeedback(`Semaine du ${format(new Date(sourceWeek), 'd MMMM yyyy', { locale: fr })} copiée.`);
         } else {
             setFeedback('Aucune donnée disponible pour la semaine sélectionnée.');
@@ -277,10 +280,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const pasteWeek = () => {
-        const copiedWeek = loadFromLocalStorage(`week_${selectedShop}_${selectedWeek}`);
+        const copiedWeek = loadFromLocalStorage(`week_${selectedShop}_${validWeek}`);
         if (copiedWeek && Object.keys(copiedWeek).length > 0) {
             setPlanning(copiedWeek);
-            saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, copiedWeek);
+            saveToLocalStorage(`planning_${selectedShop}_${validWeek}`, copiedWeek);
             setFeedback('Semaine collée.');
         } else {
             setFeedback('Aucune semaine copiée.');
@@ -295,8 +298,8 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
     };
 
     const getMonthlyWeeks = () => {
-        const monthStart = startOfMonth(new Date(selectedWeek));
-        const monthEnd = endOfMonth(new Date(selectedWeek));
+        const monthStart = startOfMonth(new Date(validWeek));
+        const monthEnd = endOfMonth(new Date(validWeek));
         const weeks = [];
 
         const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
@@ -311,8 +314,6 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     if (weekPlanning && Object.keys(weekPlanning).length > 0) {
                         weeks.push({ weekStart: weekKey, planning: weekPlanning });
                         console.log(`Week data for ${key}:`, weekPlanning);
-                    } else {
-                        console.log(`No valid data for week ${key}`);
                     }
                 }
             } catch (e) {
@@ -336,7 +337,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                 monthlyTotals[employee] = 0;
                 weeklyRecaps.push({
                     employee,
-                    week: `Semaine du ${format(new Date(selectedWeek), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(selectedWeek), 6), 'd MMMM yyyy', { locale: fr })}`,
+                    week: `Semaine du ${format(new Date(validWeek), 'd MMMM', { locale: fr })} au ${format(addDays(new Date(validWeek), 6), 'd MMMM yyyy', { locale: fr })}`,
                     hours: '0.0'
                 });
             });
@@ -410,9 +411,15 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
 
     return (
         <div className="planning-container">
-            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
-                Planning pour {selectedShop} - Semaine du {format(new Date(selectedWeek), 'd MMMM yyyy', { locale: fr })}
-            </h2>
+            {selectedWeek && !isNaN(new Date(selectedWeek).getTime()) ? (
+                <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                    Planning pour {selectedShop} - Semaine du {format(new Date(validWeek), 'd MMMM yyyy', { locale: fr })}
+                </h2>
+            ) : (
+                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: '#e53935' }}>
+                    Aucune semaine sélectionnée. Veuillez retourner à l’étape de sélection de la semaine.
+                </p>
+            )}
             <div className="navigation-buttons">
                 <Button className="button-base button-retour" onClick={onBack}>
                     Retour Employés
@@ -469,7 +476,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
-                            JOUR ({calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
+                            JOUR ({calculateEmployeeDailyHours(employee, format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)
                         </Button>
                         <Button
                             className="button-base button-recap"
@@ -478,7 +485,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                         >
-                            SEMAINE ({calculateEmployeeWeeklyHours(employee, selectedWeek, planning).toFixed(1)} h)
+                            SEMAINE ({calculateEmployeeWeeklyHours(employee, validWeek, planning).toFixed(1)} h)
                         </Button>
                         <Button
                             className="button-base button-recap"
@@ -552,9 +559,9 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     <tbody>
                         {selectedEmployees.map((employee, empIndex) => (
                             <tr key={employee}>
-                                <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)</td>
+                                <td className="fixed-col">{employee} ({calculateEmployeeDailyHours(employee, format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h)</td>
                                 {config.timeSlots.map((_, slotIndex) => {
-                                    const dayKey = format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd');
+                                    const dayKey = format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd');
                                     const isChecked = planning[employee]?.[dayKey]?.[slotIndex] || false;
                                     return (
                                         <td
@@ -567,7 +574,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                                         </td>
                                     );
                                 })}
-                                <td className="fixed-col">{calculateEmployeeDailyHours(employee, format(addDays(new Date(selectedWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h</td>
+                                <td className="fixed-col">{calculateEmployeeDailyHours(employee, format(addDays(new Date(validWeek), currentDay), 'yyyy-MM-dd'), planning).toFixed(1)} h</td>
                             </tr>
                         ))}
                     </tbody>
@@ -723,7 +730,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                     shop={selectedShop}
                     days={days}
                     config={config}
-                    selectedWeek={selectedWeek}
+                    selectedWeek={validWeek}
                     planning={planning}
                     selectedEmployees={selectedEmployees}
                     onClose={() => setShowRecapModal(null)}
@@ -743,7 +750,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             Récapitulatif mensuel
                         </h3>
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
-                            Mois de {format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr })}
+                            Mois de {format(new Date(validWeek), 'MMMM yyyy', { locale: fr })}
                         </p>
                         {(() => {
                             const { monthlyTotals, weeklyRecaps } = getMonthlyRecapData();
@@ -815,7 +822,7 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             Récapitulatif mensuel - {selectedEmployeeForMonthlyRecap}
                         </h3>
                         <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '10px' }}>
-                            Mois de {format(new Date(selectedWeek), 'MMMM yyyy', { locale: fr })}
+                            Mois de {format(new Date(validWeek), 'MMMM yyyy', { locale: fr })}
                         </p>
                         {(() => {
                             const { monthlyTotal, weeklyRecaps } = getEmployeeMonthlyRecapData(selectedEmployeeForMonthlyRecap);

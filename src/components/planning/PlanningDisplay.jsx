@@ -442,10 +442,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                             whiteSpace: 'normal',
                             overflowWrap: 'break-word',
                             lineHeight: '1.2',
-                            maxHeight: '2.4em',
-                            fontSize: '12px'
+                            maxHeight: '2.8em',
+                            fontSize: '14px' // Augmentation de la taille de la police
                         }}>
-                            RECAP {employee}
+                            RECAP<br />{employee}
                         </h4>
                         <Button
                             className="button-base button-recap"
@@ -487,10 +487,10 @@ const PlanningDisplay = ({ config, selectedShop, selectedWeek, selectedEmployees
                         whiteSpace: 'normal',
                         overflowWrap: 'break-word',
                         lineHeight: '1.2',
-                        maxHeight: '2.4em',
-                        fontSize: '12px'
+                        maxHeight: '2.8em',
+                        fontSize: '14px' // Augmentation de la taille de la police
                     }}>
-                        PLANNING
+                        PLANNING<br />{selectedShop}
                     </h4>
                     <Button
                         className="button-base button-recap"

@@ -1,170 +1,205 @@
 ﻿import { useState, useEffect } from 'react';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, addDays, isMonday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { FaArrowRight } from 'react-icons/fa';
-import Button from '../common/Button';
 import { saveToLocalStorage, loadFromLocalStorage } from '../../utils/localStorage';
+import Button from '../common/Button';
 import '../../assets/styles.css';
 
-const WeekSelection = ({ onNext, onBack, onReset, selectedWeek }) => {
-    const [weekStart, setWeekStart] = useState(selectedWeek || '');
-    const [error, setError] = useState('');
+const WeekSelection = ({ onNext, onBack, onReset, selectedWeek, selectedShop }) => {
+    const [month, setMonth] = useState(selectedWeek ? format(new Date(selectedWeek), 'yyyy-MM') : format(new Date(), 'yyyy-MM'));
+    const [currentWeek, setCurrentWeek] = useState(selectedWeek || '');
+    const [savedWeeks, setSavedWeeks] = useState([]);
+    const [feedback, setFeedback] = useState('');
 
     useEffect(() => {
-        saveToLocalStorage('selectedWeek', weekStart);
-        console.log('Saved selectedWeek to localStorage:', weekStart);
-    }, [weekStart]);
+        // Charger les semaines sauvegardées pour la boutique sélectionnée
+        console.log('Fetching saved weeks for shop:', selectedShop);
+        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith(`planning_${selectedShop}_`));
+        console.log('Found storage keys:', storageKeys);
 
-    const handleValidate = () => {
-        if (!weekStart) {
-            setError('Veuillez sélectionner une date.');
-            console.log('Validation failed: No date selected');
-            return;
-        }
-        const date = new Date(weekStart);
-        if (isNaN(date.getTime())) {
-            setError('La date sélectionnée est invalide.');
-            console.log('Validation failed: Invalid date');
-            return;
-        }
-        const formattedWeek = format(date, 'yyyy-MM-dd');
-        console.log('Validated weekStart:', formattedWeek);
-        setError('');
-        onNext(formattedWeek);
+        const weeks = storageKeys
+            .map(key => {
+                const weekKey = key.replace(`planning_${selectedShop}_`, '');
+                console.log('Processing key:', key, 'Extracted weekKey:', weekKey);
+                try {
+                    const weekDate = new Date(weekKey);
+                    const weekPlanning = loadFromLocalStorage(key);
+                    console.log(`Week data for ${weekKey}:`, weekPlanning);
+                    if (!isNaN(weekDate.getTime()) && weekPlanning && Object.keys(weekPlanning).length > 0) {
+                        return {
+                            key: weekKey,
+                            display: `Lundi ${format(weekDate, 'd MMMM', { locale: fr })} au Dimanche ${format(addDays(weekDate, 6), 'd MMMM yyyy', { locale: fr })}`
+                        };
+                    }
+                    console.log(`Skipping ${weekKey}: Invalid date or empty planning`);
+                    return null;
+                } catch (e) {
+                    console.error(`Invalid date format for key ${key}:`, e);
+                    return null;
+                }
+            })
+            .filter(week => week !== null)
+            .sort((a, b) => new Date(a.key) - new Date(b.key));
+        console.log('Processed saved weeks:', weeks);
+        setSavedWeeks(weeks);
+    }, [selectedShop]);
+
+    const handleMonthChange = (e) => {
+        setMonth(e.target.value);
+        setCurrentWeek('');
     };
 
-    const handleReset = () => {
-        setWeekStart('');
-        setError('');
-        saveToLocalStorage('selectedWeek', '');
-        console.log('Reset selectedWeek in localStorage');
-    };
-
-    const handleBack = () => {
-        console.log('handleBack called, returning to previous step');
-        onBack();
-    };
-
-    const getWeekRange = (date) => {
-        if (!date || isNaN(new Date(date).getTime())) return '';
-        return `Lundi ${format(new Date(date), 'd MMMM', { locale: fr })} au Dimanche ${format(addDays(new Date(date), 6), 'd MMMM yyyy', { locale: fr })}`;
-    };
-
-    const getSavedWeeks = () => {
+    const getWeeksInMonth = () => {
+        const monthStart = startOfMonth(new Date(month));
+        const monthEnd = endOfMonth(new Date(month));
         const weeks = [];
-        const storageKeys = Object.keys(localStorage).filter(key => key.startsWith('planning_'));
-        storageKeys.forEach(key => {
-            const weekKey = key.split('_')[2];
-            if (weekKey && !isNaN(new Date(weekKey).getTime())) {
-                weeks.push(weekKey);
+        let current = startOfWeek(monthStart, { weekStartsOn: 1 }); // Commence par un lundi
+        while (current <= monthEnd) {
+            if (isMonday(current)) {
+                weeks.push({
+                    key: format(current, 'yyyy-MM-dd'),
+                    display: `Lundi ${format(current, 'd MMMM', { locale: fr })} au Dimanche ${format(addDays(current, 6), 'd MMMM yyyy', { locale: fr })}`
+                });
             }
-        });
-        return weeks.sort().map(week => ({
-            value: week,
-            label: getWeekRange(week)
-        }));
+            current = addDays(current, 7);
+        }
+        return weeks;
+    };
+
+    const handleWeekSelect = (weekKey) => {
+        setCurrentWeek(weekKey);
+        setFeedback('');
+    };
+
+    const handleNext = () => {
+        if (!currentWeek) {
+            setFeedback('Erreur: Veuillez selectionner une semaine.');
+            return;
+        }
+        onNext(currentWeek);
     };
 
     return (
-        <div className="step-container">
-            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginBottom: '15px' }}>
-                Sélection de la semaine
-            </h2>
-            {error && <p className="error" style={{ color: '#e53935', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                <div className="form-group">
-                    <label style={{ fontFamily: 'Roboto, sans-serif' }}>Mois</label>
-                    <select
-                        className="month-select"
-                        style={{ width: '160px', fontFamily: 'Roboto, sans-serif' }}
-                        onChange={(e) => {
-                            const monthDate = new Date(e.target.value);
-                            const monday = startOfWeek(monthDate, { weekStartsOn: 1 });
-                            const formattedMonday = format(monday, 'yyyy-MM-dd');
-                            setWeekStart(formattedMonday);
-                            console.log('Month selected, set weekStart to:', formattedMonday);
-                        }}
-                    >
-                        <option value="">Choisir un mois</option>
-                        {Array.from({ length: 12 }, (_, i) => {
-                            const date = new Date(2025, i, 1);
-                            return (
-                                <option key={i} value={format(date, 'yyyy-MM-dd')}>
-                                    {format(date, 'MMMM yyyy', { locale: fr })}
-                                </option>
-                            );
-                        })}
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label style={{ fontFamily: 'Roboto, sans-serif' }}>Semaine <FaArrowRight /></label>
-                    <input
-                        type="date"
-                        value={weekStart}
-                        onChange={(e) => {
-                            setWeekStart(e.target.value);
-                            console.log('Date input changed to:', e.target.value);
-                        }}
-                        style={{ width: '300px', fontFamily: 'Roboto, sans-serif' }}
-                    />
-                    {weekStart && (
-                        <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px' }}>
-                            {getWeekRange(weekStart)}
-                        </p>
-                    )}
-                </div>
-                <div className="form-group">
-                    <label style={{ fontFamily: 'Roboto, sans-serif' }}>Semaines sauvegardées</label>
-                    <select
-                        className="week-select"
-                        style={{ width: '350px', fontFamily: 'Roboto, sans-serif' }}
-                        value={weekStart}
-                        onChange={(e) => {
-                            setWeekStart(e.target.value);
-                            console.log('Saved week selected:', e.target.value);
-                        }}
-                    >
-                        <option value="">Choisir une semaine sauvegardée</option>
-                        {getSavedWeeks().map(week => (
-                            <option key={week.value} value={week.value}>
-                                {week.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+        <div className="week-selection-container">
+            <div style={{
+                fontFamily: 'Roboto, sans-serif',
+                fontSize: '24px',
+                fontWeight: '700',
+                textAlign: 'center',
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#f5f5f5',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                width: 'fit-content',
+                maxWidth: '600px',
+                marginLeft: 'auto',
+                marginRight: 'auto'
+            }}>
+                {selectedShop || 'Aucune boutique sélectionnée'}
             </div>
-            <div className="button-group" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '15px' }}>
-                <Button
-                    className="button-base button-primary"
-                    onClick={handleValidate}
-                    style={{ backgroundColor: '#1e88e5', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
-                >
-                    Valider
-                </Button>
-                <Button
-                    className="button-base button-retour"
-                    onClick={handleBack}
-                    style={{ backgroundColor: '#0d47a1', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0b3d91'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0d47a1'}
-                >
+            <h2 style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center' }}>
+                Selection de la semaine
+            </h2>
+            {feedback && (
+                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('Succes') ? '#4caf50' : '#e53935', marginBottom: '10px' }}>
+                    {feedback}
+                </p>
+            )}
+            <div className="month-selector" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '10px' }}>Mois</h3>
+                <input
+                    type="month"
+                    value={month}
+                    onChange={handleMonthChange}
+                    style={{ padding: '8px', fontSize: '14px', width: '200px' }}
+                />
+            </div>
+            <div className="week-selector" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '10px' }}>Semaine</h3>
+                <ul style={{ listStyle: 'none', padding: 0, width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {getWeeksInMonth().map(week => (
+                        <li key={week.key} style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                            <div
+                                style={{
+                                    width: '250px',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    padding: '8px',
+                                    backgroundColor: currentWeek === week.key ? '#f28c38' : '#f5f5f5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => handleWeekSelect(week.key)}
+                            >
+                                <span style={{
+                                    fontFamily: 'Roboto, sans-serif',
+                                    fontSize: '14px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    color: currentWeek === week.key ? '#fff' : '#000'
+                                }}>
+                                    {week.display}
+                                </span>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div className="saved-weeks" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', marginBottom: '10px' }}>Semaines sauvegardees</h3>
+                {savedWeeks.length === 0 ? (
+                    <p style={{ fontFamily: 'Roboto, sans-serif', color: '#e53935', textAlign: 'center' }}>
+                        Aucune semaine sauvegardee pour cette boutique.
+                    </p>
+                ) : (
+                    <ul style={{ listStyle: 'none', padding: 0, width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        {savedWeeks.map(week => (
+                            <li key={week.key} style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                                <div
+                                    style={{
+                                        width: '250px',
+                                        border: '1px solid #ccc',
+                                        borderRadius: '4px',
+                                        padding: '8px',
+                                        backgroundColor: currentWeek === week.key ? '#f28c38' : '#f5f5f5',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => handleWeekSelect(week.key)}
+                                >
+                                    <span style={{
+                                        fontFamily: 'Roboto, sans-serif',
+                                        fontSize: '14px',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        color: currentWeek === week.key ? '#fff' : '#000'
+                                    }}>
+                                        {week.display}
+                                    </span>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+            <div className="navigation-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
+                <Button className="button-base button-retour" onClick={onBack}>
                     Retour
                 </Button>
-                <Button
-                    className="button-base button-reinitialiser"
-                    onClick={handleReset}
-                    style={{ backgroundColor: '#e53935', color: '#fff', padding: '8px 16px', fontSize: '14px' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#d32f2f'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e53935'}
-                >
-                    Réinitialiser
+                <Button className="button-base button-primary" onClick={handleNext}>
+                    Valider
+                </Button>
+                <Button className="button-base button-reinitialiser" onClick={() => onReset({ feedback: 'Succes: Toutes les donnees ont ete reinitialisees.' })}>
+                    Reinitialiser
                 </Button>
             </div>
-            <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
-                Klick-Planning - copyright © Nicolas Lefèvre
-            </p>
         </div>
     );
 };

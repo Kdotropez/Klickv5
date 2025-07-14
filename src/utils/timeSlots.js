@@ -1,10 +1,12 @@
-﻿
-    import { parse, addMinutes, format } from 'date-fns';
+﻿import { parse, addMinutes, format } from 'date-fns';
 
 export const generateTimeSlots = (startTime, endTime, interval) => {
     const slots = [];
-    let current = parse(startTime, 'HH:mm', new Date());
-    const end = parse(endTime, 'HH:mm', new Date());
+    const referenceDate = new Date(2025, 0, 1); // Date de référence : 1er janvier 2025
+    let current = parse(startTime, 'HH:mm', referenceDate);
+    const end = ['24:00', '00:00', '01:00', '02:00', '03:00'].includes(endTime)
+        ? parse(endTime === '24:00' ? '00:00' : endTime, 'HH:mm', new Date(2025, 0, 2))
+        : parse(endTime, 'HH:mm', referenceDate);
 
     while (current < end) {
         const next = addMinutes(current, interval);

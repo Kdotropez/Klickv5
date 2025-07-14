@@ -10,23 +10,37 @@ import './assets/styles.css';
 
 const App = () => {
     const [step, setStep] = useState(1);
-    const [config, setConfig] = useState(loadFromLocalStorage('timeSlotConfig') || {});
-    const [selectedShop, setSelectedShop] = useState(loadFromLocalStorage('selectedShop') || '');
-    const [selectedWeek, setSelectedWeek] = useState(loadFromLocalStorage('selectedWeek') || '');
-    const [selectedEmployees, setSelectedEmployees] = useState(loadFromLocalStorage(`employees_${selectedShop}`) || []);
-    const [planning, setPlanning] = useState(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
+    const [config, setConfig] = useState(loadFromLocalStorage('timeSlotConfig', {}) || {});
+    const [selectedShop, setSelectedShop] = useState(loadFromLocalStorage('selectedShop', '') || '');
+    const [selectedWeek, setSelectedWeek] = useState(loadFromLocalStorage('selectedWeek', '') || '');
+    const [selectedEmployees, setSelectedEmployees] = useState(loadFromLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, []) || []);
+    const [planning, setPlanning] = useState(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {});
     const [feedback, setFeedback] = useState('');
 
     useEffect(() => {
         saveToLocalStorage('selectedShop', selectedShop);
-        saveToLocalStorage(`employees_${selectedShop}`, selectedEmployees);
         saveToLocalStorage('selectedWeek', selectedWeek);
+        saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, selectedEmployees);
         saveToLocalStorage(`planning_${selectedShop}_${selectedWeek}`, planning);
-        console.log('Saved to localStorage:', { selectedShop, selectedWeek, selectedEmployees });
+        console.log('Saved to localStorage:', { selectedShop, selectedWeek, selectedEmployees, planning });
     }, [selectedShop, selectedEmployees, selectedWeek, planning]);
 
     useEffect(() => {
-        // Effacer le feedback après 3 secondes
+        if (selectedShop && selectedWeek) {
+            const newPlanning = loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {};
+            setPlanning(newPlanning);
+            const newSelectedEmployees = loadFromLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, []) || [];
+            setSelectedEmployees(newSelectedEmployees);
+            console.log('Reloaded from localStorage:', {
+                planningKey: `planning_${selectedShop}_${selectedWeek}`,
+                planning: newPlanning,
+                employeesKey: `selected_employees_${selectedShop}_${selectedWeek}`,
+                employees: newSelectedEmployees
+            });
+        }
+    }, [selectedShop, selectedWeek]);
+
+    useEffect(() => {
         if (feedback) {
             const timer = setTimeout(() => setFeedback(''), 3000);
             return () => clearTimeout(timer);
@@ -41,21 +55,25 @@ const App = () => {
             setStep(step + 1);
         } else if (step === 2) {
             setSelectedShop(data);
-            // Charger les employés spécifiques à la nouvelle boutique
-            setSelectedEmployees(loadFromLocalStorage(`employees_${data}`) || []);
+            setSelectedEmployees(loadFromLocalStorage(`selected_employees_${data}_${selectedWeek}`, []) || []);
+            setPlanning(loadFromLocalStorage(`planning_${data}_${selectedWeek}`, {}) || {});
             saveToLocalStorage('selectedShop', data);
             setStep(step + 1);
         } else if (step === 3) {
             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
             if (!data || !dateRegex.test(data) || isNaN(new Date(data).getTime())) {
-                setFeedback('❌ Veuillez sélectionner une semaine valide (format YYYY-MM-DD).');
+                setFeedback('Erreur: Veuillez sélectionner une semaine valide (format YYYY-MM-DD).');
                 console.log('Invalid week data:', data);
                 return;
             }
             setSelectedWeek(data);
+            setSelectedEmployees(loadFromLocalStorage(`selected_employees_${selectedShop}_${data}`, []) || []);
+            setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${data}`, {}) || {});
             setStep(step + 1);
         } else if (step === 4) {
             setSelectedEmployees(data);
+            saveToLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, data);
+            setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {});
             setStep(step + 1);
         }
     };
@@ -64,35 +82,37 @@ const App = () => {
         console.log('handleBack called, current step:', step);
         if (step > 1) {
             setStep(step - 1);
-            // Recharger les données spécifiques à la boutique lors du retour
-            const storedShops = loadFromLocalStorage('shops') || [];
-            const storedSelectedShop = loadFromLocalStorage('selectedShop') || '';
+            const storedSelectedShop = loadFromLocalStorage('selectedShop', '') || '';
             setSelectedShop(storedSelectedShop);
-            setSelectedEmployees(loadFromLocalStorage(`employees_${storedSelectedShop}`) || []);
-            console.log('Returning to step:', step - 1, 'Restored shops:', storedShops, 'Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`employees_${storedSelectedShop}`));
+            setSelectedEmployees(loadFromLocalStorage(`selected_employees_${storedSelectedShop}_${selectedWeek}`, []) || []);
+            setPlanning(loadFromLocalStorage(`planning_${storedSelectedShop}_${selectedWeek}`, {}) || {});
+            console.log('Returning to step:', step - 1, 'Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`selected_employees_${storedSelectedShop}_${selectedWeek}`, []));
         }
     };
 
     const handleBackToShop = () => {
         console.log('handleBackToShop called');
         setStep(2);
-        const storedShops = loadFromLocalStorage('shops') || [];
-        const storedSelectedShop = loadFromLocalStorage('selectedShop') || '';
+        const storedSelectedShop = loadFromLocalStorage('selectedShop', '') || '';
         setSelectedShop(storedSelectedShop);
-        setSelectedEmployees(loadFromLocalStorage(`employees_${storedSelectedShop}`) || []);
-        console.log('Restored shops:', storedShops, 'Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`employees_${storedSelectedShop}`));
+        setSelectedEmployees(loadFromLocalStorage(`selected_employees_${storedSelectedShop}_${selectedWeek}`, []) || []);
+        setPlanning(loadFromLocalStorage(`planning_${storedSelectedShop}_${selectedWeek}`, {}) || {});
+        console.log('Restored selectedShop:', storedSelectedShop, 'Restored employees:', loadFromLocalStorage(`selected_employees_${storedSelectedShop}_${selectedWeek}`, []));
     };
 
     const handleBackToWeek = () => {
         console.log('handleBackToWeek called');
         setStep(3);
-        setSelectedWeek(loadFromLocalStorage('selectedWeek') || '');
+        setSelectedWeek(loadFromLocalStorage('selectedWeek', '') || '');
+        setSelectedEmployees(loadFromLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, []) || []);
+        setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {});
     };
 
     const handleBackToConfig = () => {
         console.log('handleBackToConfig called');
         setStep(1);
-        setConfig(loadFromLocalStorage('timeSlotConfig') || {});
+        setConfig(loadFromLocalStorage('timeSlotConfig', {}) || {});
+        setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {});
     };
 
     const handleReset = ({ feedback: resetFeedback }) => {
@@ -103,44 +123,91 @@ const App = () => {
         setPlanning({});
         setStep(1);
         localStorage.clear();
-        setFeedback(resetFeedback || 'Toutes les données ont été réinitialisées.');
+        setFeedback(resetFeedback || 'Succès: Toutes les données ont été réinitialisées.');
         console.log('Reset all data and cleared localStorage');
     };
 
     const exportLocalStorage = () => {
-        const data = JSON.stringify(localStorage);
-        const blob = new Blob([data], { type: 'application/json' });
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            data[key] = loadFromLocalStorage(key, null);
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'data_localStorage.json';
+        a.download = `planning_export_${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
-        setFeedback('✅ Données exportées dans votre dossier de téléchargement (ex. : C:\\Users\\lefev\\Downloads\\data_localStorage.json). Copiez ce fichier sur une clé USB pour le transférer.');
+        setFeedback('Succès: Données exportées avec succès dans votre dossier de téléchargement.');
+    };
+
+    const validateImportedData = (data) => {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        const validKeys = ['shops', 'selectedWeek', 'timeSlotConfig'];
+        const errors = [];
+
+        for (const key in data) {
+            if (!validKeys.includes(key) && !key.startsWith('employees_') && !key.startsWith('selected_employees_') && !key.startsWith('planning_') && !key.startsWith('copied_') && !key.startsWith('lastPlanning_')) {
+                errors.push(`Clé non reconnue: ${key}`);
+            }
+            if (key.startsWith('planning_') || key === 'selectedWeek') {
+                const datePart = key.startsWith('planning_') ? key.split('_')[2] : data[key];
+                if (datePart && (!dateRegex.test(datePart) || isNaN(new Date(datePart).getTime()))) {
+                    errors.push(`Date invalide dans ${key}: ${datePart}`);
+                }
+            }
+            if (key === 'shops' && !Array.isArray(data[key])) {
+                errors.push('La clé "shops" doit être un tableau.');
+            }
+            if (key === 'timeSlotConfig') {
+                const config = data[key];
+                if (!config || typeof config !== 'object' || !config.interval || !config.startTime || !config.endTime || !Array.isArray(config.timeSlots)) {
+                    errors.push('La clé "timeSlotConfig" doit contenir interval, startTime, endTime et timeSlots.');
+                }
+            }
+            if (key.startsWith('employees_') && !Array.isArray(data[key])) {
+                errors.push(`La clé ${key} doit être un tableau.`);
+            }
+            if (key.startsWith('selected_employees_') && !Array.isArray(data[key])) {
+                errors.push(`La clé ${key} doit être un tableau.`);
+            }
+        }
+
+        return errors.length === 0 ? null : errors.join('; ');
     };
 
     const importLocalStorage = (event) => {
         const file = event.target.files[0];
         if (!file) {
-            setFeedback('❌ Aucun fichier sélectionné.');
+            setFeedback('Erreur: Aucun fichier sélectionné.');
             return;
         }
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                localStorage.clear();
-                for (let key in data) {
-                    localStorage.setItem(key, data[key]);
+                const validationError = validateImportedData(data);
+                if (validationError) {
+                    setFeedback(`Erreur: Erreur dans les données importées: ${validationError}`);
+                    console.error('Validation error:', validationError);
+                    return;
                 }
-                setConfig(loadFromLocalStorage('timeSlotConfig') || {});
-                setSelectedShop(loadFromLocalStorage('selectedShop') || '');
-                setSelectedWeek(loadFromLocalStorage('selectedWeek') || '');
-                setSelectedEmployees(loadFromLocalStorage(`employees_${selectedShop}`) || []);
-                setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`) || {});
-                setFeedback('✅ Données importées avec succès depuis le fichier JSON !');
+
+                localStorage.clear();
+                for (const key in data) {
+                    saveToLocalStorage(key, data[key]);
+                }
+                setConfig(loadFromLocalStorage('timeSlotConfig', {}) || {});
+                setSelectedShop(loadFromLocalStorage('selectedShop', '') || '');
+                setSelectedWeek(loadFromLocalStorage('selectedWeek', '') || '');
+                setSelectedEmployees(loadFromLocalStorage(`selected_employees_${selectedShop}_${selectedWeek}`, []) || []);
+                setPlanning(loadFromLocalStorage(`planning_${selectedShop}_${selectedWeek}`, {}) || {});
+                setFeedback('Succès: Données importées avec succès depuis le fichier JSON.');
             } catch (error) {
-                setFeedback('❌ Erreur de lecture du fichier JSON');
+                setFeedback('Erreur: Erreur de lecture du fichier JSON.');
+                console.error('Error reading JSON file:', error);
             }
         };
         reader.readAsText(file);
@@ -156,7 +223,7 @@ const App = () => {
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                 >
-                    📤 Exporter
+                    Exporter
                 </Button>
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <input
@@ -172,12 +239,12 @@ const App = () => {
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e88e5'}
                     >
-                        📥 Importer
+                        Importer
                     </Button>
                 </label>
             </div>
             {feedback && (
-                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('succès') ? '#4caf50' : '#e53935', marginBottom: '10px' }}>
+                <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', color: feedback.includes('Succès') ? '#4caf50' : '#e53935', marginBottom: '10px' }}>
                     {feedback}
                 </p>
             )}
@@ -202,6 +269,7 @@ const App = () => {
                     onBack={handleBack}
                     onReset={handleReset}
                     selectedWeek={selectedWeek}
+                    selectedShop={selectedShop}
                 />
             )}
             {step === 4 && (
@@ -211,6 +279,7 @@ const App = () => {
                     onReset={handleReset}
                     selectedShop={selectedShop}
                     selectedEmployees={selectedEmployees}
+                    selectedWeek={selectedWeek}
                 />
             )}
             {step === 5 && (
@@ -228,7 +297,7 @@ const App = () => {
                 />
             )}
             <p style={{ fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#333' }}>
-                Klick-Planning - copyright © Nicolas Lefèvre
+                Klick-Planning - copyright © Nicolas Lefevre
             </p>
         </div>
     );
